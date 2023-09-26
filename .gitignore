@@ -1,0 +1,5 @@
+**/build
+**/dist
+.env
+**/.publish.res.json
+.code-workspace

@@ -3,6 +3,7 @@ module asset_tokenization::fnft_factory {
     use std::string::{String};
     use std::option::{Self, Option};
     use std::ascii;
+    use std::vector;
 
     // Sui imports
     use sui::object::{Self, UID};
@@ -16,6 +17,7 @@ module asset_tokenization::fnft_factory {
     const EUniqueAsset: u64 = 3;
     const ENonUniqueAsset: u64 = 4;
     const ENonBurnable: u64 = 5;
+    const EVecLengthMismatch: u64 = 6;
     
     struct AssetCap<phantom T> has key, store {
         id: UID,
@@ -82,8 +84,9 @@ module asset_tokenization::fnft_factory {
     /// Since AssetCap<T> will be owned by the creator of type T, it is admin restricted
     /// Can only be called if underlying asset is unique
     /// TAs balance defaults to 0
-    public fun mint_nft<T>(cap: &mut AssetCap<T>, metadata: VecMap<String, String>, ctx: &mut TxContext): TokenizedAsset<T> {
+    public fun mint_nft<T>(cap: &mut AssetCap<T>, keys: vector<String>, values: vector<String>, ctx: &mut TxContext): TokenizedAsset<T> {
         assert!(cap.unique == true, ENonUniqueAsset);
+        let metadata = create_vec_map_from_arrays(keys, values);
         let nft = mint(cap, metadata, 1, ctx);
         nft
     }
@@ -175,6 +178,21 @@ module asset_tokenization::fnft_factory {
     public fun value<T>(tokenized_asset: &TokenizedAsset<T>): u64 {
         let balance = balance::value(&tokenized_asset.balance);
         balance
+    }
+
+    /// Internal helper function used to populate a VecMap<String, String>
+    public fun create_vec_map_from_arrays(keys: vector<String>, values: vector<String>): VecMap<String, String> {
+        let vec_map = vec_map::empty<String, String>();
+
+        let len = vector::length(&keys);
+        assert!(len == vector::length(&values), EVecLengthMismatch);
+
+        let i = 0;
+        while (i < len) {
+            vec_map::insert(&mut vec_map, *vector::borrow(&keys, i), *vector::borrow(&values, i));
+            i = i + 1;
+        };
+        vec_map
     }
 
 }

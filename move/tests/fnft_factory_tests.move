@@ -10,8 +10,8 @@ module asset_tokenization::fnft_factory_tests {
     use sui::tx_context::{Self};
     use std::ascii;
     use std::option;
-    use sui::vec_map::{Self};
-
+    use std::string::{String};
+    use std::vector::{Self};
 
     struct ASSET_TESTS has drop {}
 
@@ -85,6 +85,29 @@ module asset_tokenization::fnft_factory_tests {
 
 
     #[test]
+    #[expected_failure(abort_code=fnft_factory::EUniqueAsset)]
+    fun test_mint_ft_with_unique_asset() {
+        let scenario= test_scenario::begin(ADMIN);
+        let test = &mut scenario;
+        let ctx = test_scenario::ctx(test);
+        let witness = ASSET_TESTS{};
+
+        let (asset_cap, asset_metadata) = fnft_factory::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+            string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, false, ctx);
+
+        let ft = fnft_factory::mint_ft(&mut asset_cap, 1, ctx);
+        let value = fnft_factory::value(&ft);
+
+        assert!(value == 1, EWrongBalanceValue);
+
+        transfer::public_freeze_object(asset_metadata);
+        transfer::public_transfer(asset_cap, tx_context::sender(ctx));
+        transfer::public_transfer(ft, USER);
+        test_scenario::end(scenario);
+    }
+
+
+    #[test]
     #[expected_failure(abort_code=fnft_factory::ENoSupply)]
     fun test_no_supply_to_mint() {
         let scenario= test_scenario::begin(ADMIN);
@@ -113,10 +136,32 @@ module asset_tokenization::fnft_factory_tests {
 
         let (asset_cap, asset_metadata) = fnft_factory::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, false, ctx);
-        let metadata = vec_map::empty();
-        vec_map::insert(&mut metadata, string::utf8(b"name"), string::utf8(b"tokenized asset"));
-        vec_map::insert(&mut metadata, string::utf8(b"description"), string::utf8(b"description"));
-        let nft = fnft_factory::mint_nft(&mut asset_cap, metadata, ctx);
+
+        let (keys, values) = create_vectors();
+
+        let nft = fnft_factory::mint_nft(&mut asset_cap, keys, values, ctx);
+
+        transfer::public_freeze_object(asset_metadata);
+        transfer::public_transfer(asset_cap, tx_context::sender(ctx));
+        transfer::public_transfer(nft, USER);
+        test_scenario::end(scenario);
+    }
+
+
+   #[test]
+   #[expected_failure(abort_code=fnft_factory::ENonUniqueAsset)]
+    fun test_mint_nft_with_non_unique_asset() {
+        let scenario= test_scenario::begin(ADMIN);
+        let test = &mut scenario;
+        let ctx = test_scenario::ctx(test);
+        let witness = ASSET_TESTS{};
+
+        let (asset_cap, asset_metadata) = fnft_factory::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+            string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, false, ctx);
+
+        let (keys, values) = create_vectors();
+
+        let nft = fnft_factory::mint_nft(&mut asset_cap, keys, values, ctx);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
@@ -162,10 +207,9 @@ module asset_tokenization::fnft_factory_tests {
         let (asset_cap, asset_metadata) = fnft_factory::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, false, ctx);
         
-        let metadata = vec_map::empty();
-        vec_map::insert(&mut metadata, string::utf8(b"name"), string::utf8(b"tokenized asset"));
-        vec_map::insert(&mut metadata, string::utf8(b"description"), string::utf8(b"description"));
-        let nft = fnft_factory::mint_nft(&mut asset_cap, metadata, ctx);
+        let (keys, values) = create_vectors();
+
+        let nft = fnft_factory::mint_nft(&mut asset_cap, keys, values, ctx);
 
         let new_tokenized_asset = fnft_factory::split(&mut nft, 1, ctx);
 
@@ -213,15 +257,11 @@ module asset_tokenization::fnft_factory_tests {
         let (asset_cap, asset_metadata) = fnft_factory::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, false, ctx);
         
-        let metadata1 = vec_map::empty();
-        vec_map::insert(&mut metadata1, string::utf8(b"name"), string::utf8(b"tokenized asset1"));
-        vec_map::insert(&mut metadata1, string::utf8(b"description"), string::utf8(b"description"));
-        let nft1 = fnft_factory::mint_nft(&mut asset_cap, metadata1, ctx);
+        let (keys1, values1) = create_vectors();
+        let nft1 = fnft_factory::mint_nft(&mut asset_cap, keys1, values1, ctx);
 
-        let metadata2 = vec_map::empty();
-        vec_map::insert(&mut metadata2, string::utf8(b"name"), string::utf8(b"tokenized asset2"));
-        vec_map::insert(&mut metadata2, string::utf8(b"description"), string::utf8(b"description"));
-        let nft2 = fnft_factory::mint_nft(&mut asset_cap, metadata2, ctx);
+        let (keys2, values2) = create_vectors();
+        let nft2 = fnft_factory::mint_nft(&mut asset_cap, keys2, values2, ctx);
 
         fnft_factory::join(&mut nft1, nft2);
 
@@ -264,15 +304,42 @@ module asset_tokenization::fnft_factory_tests {
 
         let (asset_cap, asset_metadata) = fnft_factory::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, false, ctx);
-        let metadata = vec_map::empty();
-        vec_map::insert(&mut metadata, string::utf8(b"name"), string::utf8(b"tokenized asset"));
-        vec_map::insert(&mut metadata, string::utf8(b"description"), string::utf8(b"description"));
-        let nft = fnft_factory::mint_nft(&mut asset_cap, metadata, ctx);
+
+        let (keys, values) = create_vectors();
+        let nft = fnft_factory::mint_nft(&mut asset_cap, keys, values, ctx);
 
         fnft_factory::burn(&mut asset_cap, nft);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
         test_scenario::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code=fnft_factory::EVecLengthMismatch)]
+    fun test_create_vec_map_from_arrays() {
+        let (keys, values) = create_vectors();
+        vector::push_back(&mut values, string::utf8(b"No"));
+
+        let _vec_map = fnft_factory::create_vec_map_from_arrays(keys, values);
+    }
+
+
+    // Helper function: create key value vectors
+    fun create_vectors(): (vector<String>, vector<String>) {
+
+        let keys = vector[
+            string::utf8(b"Piece"),
+            string::utf8(b"Is it Amazing?"),
+            string::utf8(b"In a scale from 1 to 10, how good?"),
+        ];
+
+        let values = vector[
+            string::utf8(b"1/100"),
+            string::utf8(b"Yes"),
+            string::utf8(b"11"),
+        ];
+
+        (keys, values)
     }
 }

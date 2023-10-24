@@ -80,7 +80,7 @@ module asset_tokenization::fnft_factory {
         let supply_value = supply(cap);
         assert!(supply_value + value <= cap.total_supply, ENoSupply);
         let metadata = create_vec_map_from_arrays(keys, values);
-        assert!(!vec_map::is_empty(&metadata) && value == 1 || vec_map::is_empty(&metadata), EUniqueAsset);
+        assert!(!vec_map::is_empty(&metadata) && value == 1 || vec_map::is_empty(&metadata) && value > 0, EUniqueAsset);
         let balance = balance::increase_supply(&mut cap.supply, value);
         let tokenized_asset = TokenizedAsset {
             id: object::new(ctx),

@@ -15,7 +15,6 @@ module asset_tokenization::fnft_template {
     struct FNFT_TEMPLATE has drop {}
 
     const TOTAL_SUPPLY: u64 = 100;
-    const UNIQUE: bool = true; 
     const BURNABLE: bool = false; 
 
 
@@ -27,7 +26,6 @@ module asset_tokenization::fnft_template {
         string::utf8(b"asset_name"), 
         string::utf8(b"description"), 
         option::none<Url>(), 
-        UNIQUE, 
         BURNABLE,
         ctx
         );

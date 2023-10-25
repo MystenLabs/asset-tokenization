@@ -18,24 +18,23 @@ module asset_tokenization::fnft_factory {
     const ENoSupply: u64 = 1;
     const EInsufficientTotalSupply: u64 = 2;
     const EUniqueAsset: u64 = 3;
-    const ENonUniqueAsset: u64 = 4;
-    const ENonBurnable: u64 = 5;
-    const EVecLengthMismatch: u64 = 6;
+    const ENonBurnable: u64 = 4;
+    const EVecLengthMismatch: u64 = 5;
+    const EInsufficientBalance: u64 = 6;
     const ENotOneTimeWitness: u64 = 7;
     const ETypeNotFromModule: u64 = 8;
-    
-    struct AssetCap<phantom T> has key, store {
-        id: UID,
-        supply: Supply<T>, // the current circulating supply 
-        total_supply: u64, // the total max supply allowed to exist at any time that was issued upon creation of Asset T
-	    unique: bool, // strictly supporting NFTs of type T or FTs of type T
-	    burnable: bool // TAs of type T can be burned by an admin
-    }
 
     /// Special object which connects creator with asset `T` type.
     struct AssetMetadataTypeProof<phantom T: store> has key, store {
         id: UID,
         publisher: Publisher
+    }
+    
+    struct AssetCap<phantom T> has key, store {
+        id: UID,
+        supply: Supply<T>, // the current circulating supply 
+        total_supply: u64, // the total max supply allowed to exist at any time that was issued upon creation of Asset T
+	    burnable: bool // TAs of type T can be burned by an admin
     }
 
     struct AssetMetadata<phantom T> has key, store {
@@ -55,7 +54,6 @@ module asset_tokenization::fnft_factory {
         balance: Balance<T>,
         metadata: VecMap<String, String>,
         image_url: Option<Url>,
-        unique: bool
     }
 
 
@@ -66,7 +64,6 @@ module asset_tokenization::fnft_factory {
         name: String, 
         description: String, 
         icon_url: Option<Url>, 
-        unique: bool, 
         burnable: bool, 
         ctx: &mut TxContext): 
         (AssetCap<T>, AssetMetadata<T>){
@@ -75,7 +72,6 @@ module asset_tokenization::fnft_factory {
             id: object::new(ctx),
             supply: balance::create_supply(witness),
             total_supply,
-            unique,
             burnable
         };
         
@@ -89,45 +85,19 @@ module asset_tokenization::fnft_factory {
         
         (asset_cap, asset_metadata)
     }
-    
 
-    /// Create a new unique tokenized asset (NFT)
-    /// Since AssetCap<T> will be owned by the creator of type T, it is admin restricted
-    /// Can only be called if underlying asset is unique
-    /// TAs balance defaults to 0
-    public fun mint_nft<T>(cap: &mut AssetCap<T>, keys: vector<String>, values: vector<String>, ctx: &mut TxContext): TokenizedAsset<T> {
-        assert!(cap.unique == true, ENonUniqueAsset);
-        let metadata = create_vec_map_from_arrays(keys, values);
-        let nft = mint(cap, metadata, 1, ctx);
-        nft
-    }
-
-
-    /// Create a new non-unique tokenized asset (FT)
-    /// Since AssetCap<T> will be owned by the creator of type T, it is admin restricted
-    /// Can only be called if underlying asset is not unique
-    public fun mint_ft<T>(cap: &mut AssetCap<T>, value: u64, ctx: &mut TxContext): TokenizedAsset<T> {
-        assert!(cap.unique == false, EUniqueAsset);
-        let vec = vec_map::empty();
-        let ft = mint(cap, vec, value, ctx);
-        ft
-    }
-
-
-    /// Internal helper method utilized by mint_nft & mint_ft
     /// Mints a TA with the specified fields
-    fun mint<T>(cap: &mut AssetCap<T>, metadata: VecMap<String, String>, value: u64, ctx: &mut TxContext) : TokenizedAsset<T> {
+    public fun mint<T>(cap: &mut AssetCap<T>, keys: vector<String>, values: vector<String>, value: u64, ctx: &mut TxContext) : TokenizedAsset<T> {
         let supply_value = supply(cap);
         assert!(supply_value + value <= cap.total_supply, ENoSupply);
+        let metadata = create_vec_map_from_arrays(keys, values);
+        assert!(!vec_map::is_empty(&metadata) && value == 1 || vec_map::is_empty(&metadata) && value > 0, EUniqueAsset);
         let balance = balance::increase_supply(&mut cap.supply, value);
-        let unique = !vec_map::is_empty(&metadata);
-
         let tokenized_asset = TokenizedAsset {
             id: object::new(ctx),
             balance,
             metadata,
             image_url: option::none<Url>(),
-            unique
         };
 
         tokenized_asset
@@ -136,16 +106,19 @@ module asset_tokenization::fnft_factory {
 
     /// Split a tokenized_asset
     /// Creates a new tokenized asset of balance split_amount and updates tokenized_asset's balance accordingly
-    /// If the asset is unique it can not be split into a new TA. 
+    /// If the asset is unique (NFT) it can not be split into a new TA. 
     public fun split<T>(tokenized_asset: &mut TokenizedAsset<T>, split_amount: u64, ctx: &mut TxContext): TokenizedAsset<T> {
-        assert!(tokenized_asset.unique == false, EUniqueAsset);
+        let ft = vec_map::is_empty(&tokenized_asset.metadata);
+        assert!(ft == true, EUniqueAsset);
+        let balance_value = value(tokenized_asset);
+        assert!(balance_value > 1 && split_amount < balance_value, EInsufficientBalance);
+
         let new_balance = balance::split(&mut tokenized_asset.balance, split_amount);
         let new_tokenized_asset = TokenizedAsset {
             id: object::new(ctx),
             balance: new_balance,
             metadata: tokenized_asset.metadata,
             image_url: option::none<Url>(),
-            unique: false
         };
 
         new_tokenized_asset
@@ -154,10 +127,12 @@ module asset_tokenization::fnft_factory {
 
     /// Merge tokenized_asset2's balance into tokenized_asset1's balance
     /// Tokenized_asset2 is burned
-    /// If the asset is unique it can not be merged with other TAs of type T since they describe unique variations of the underlying asset T
+    /// If the asset is unique (NFT) it can not be merged with other TAs of type T since they describe unique variations of the underlying asset T
     public fun join<T>(tokenized_asset1: &mut TokenizedAsset<T>, tokenized_asset2: TokenizedAsset<T>) {
-        assert!(tokenized_asset1.unique == false && tokenized_asset2.unique == false, EUniqueAsset);
-        let TokenizedAsset {id, balance, metadata: _, image_url: _, unique: _} = tokenized_asset2;
+        let ft1 = vec_map::is_empty(&tokenized_asset1.metadata);
+        let ft2 = vec_map::is_empty(&tokenized_asset2.metadata);
+        assert!(ft1 == true && ft2 == true, EUniqueAsset);
+        let TokenizedAsset {id, balance, metadata: _, image_url: _} = tokenized_asset2;
         object::delete(id);
         balance::join(&mut tokenized_asset1.balance, balance);
     }
@@ -166,7 +141,9 @@ module asset_tokenization::fnft_factory {
     /// Destroy the tokenized asset and decrease the supply in `cap` accordingly
     public fun burn<T>(cap: &mut AssetCap<T>, tokenized_asset: TokenizedAsset<T>) {
         assert!(cap.burnable == true, ENonBurnable);
-        let TokenizedAsset {id, balance, metadata: _, image_url: _, unique: _} = tokenized_asset;
+        let balance_value = value(&tokenized_asset);
+        cap.total_supply = cap.total_supply - balance_value;
+        let TokenizedAsset {id, balance, metadata: _, image_url: _} = tokenized_asset;
         object::delete(id);
         balance::decrease_supply(&mut cap.supply, balance);
     }
@@ -207,18 +184,18 @@ module asset_tokenization::fnft_factory {
     }
 
     /// Returns proof for asset `T` that the sender wants to create.
-  public fun claim_asset_type_proof<OTW: drop, T: store>(
-    otw: OTW, ctx: &mut TxContext
-  ) {
-    // Check that passed argument is a valid one-time witness.
-    assert!(sui::types::is_one_time_witness(&otw), ENotOneTimeWitness);
-    let publisher = package::claim(otw, ctx);
-    // Check whether `T` belongs to the same module as the publisher.
-    assert!(package::from_module<T>(&publisher), ETypeNotFromModule);
-    transfer::transfer(AssetMetadataTypeProof<T> {
-        id: object::new(ctx),
-        publisher,
-    }, tx_context::sender(ctx));
-  }
+    public fun claim_asset_type_proof<OTW: drop, T: store>(
+        otw: OTW, ctx: &mut TxContext
+    ) {
+        // Check that passed argument is a valid one-time witness.
+        assert!(sui::types::is_one_time_witness(&otw), ENotOneTimeWitness);
+        let publisher = package::claim(otw, ctx);
+        // Check whether `T` belongs to the same module as the publisher.
+        assert!(package::from_module<T>(&publisher), ETypeNotFromModule);
+        transfer::transfer(AssetMetadataTypeProof<T> {
+            id: object::new(ctx),
+            publisher,
+        }, tx_context::sender(ctx));
+    }
 
 }

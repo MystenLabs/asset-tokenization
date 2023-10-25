@@ -1,0 +1,11 @@
+[package]
+name = "template"
+version = "0.0.1"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "20cf9113d" }
+
+asset_tokenization = { local = "../asset-tokenization" }
+
+[addresses]
+template =  "0x0"

@@ -1,0 +1,22 @@
+{
+  "name": "setup",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "publish": "./publish.sh",
+    "mbf": "pnpm --filter ./move-binary-format",
+    "publish-ts": "src/publish.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mysten/bcs": "^0.6.1",
+    "@mysten/sui.js": "^0.34.1",
+    "dotenv": "^16.0.3",
+    "typescript": "^5.0.2"
+  },
+  "devDependencies": {
+    "env-cmd": "^10.1.0"
+  }
+}

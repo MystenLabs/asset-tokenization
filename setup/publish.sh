@@ -24,7 +24,7 @@ if [ $# -ne 0 ]; then
   fi
 fi
 
-publish_res=$(sui client publish --gas-budget 200000000 --json ../move/asset-tokenization)
+publish_res=$(sui client publish --gas-budget 200000000 --json ../move/asset-tokenization --skip-dependency-verification)
 
 echo ${publish_res} >.publish.res.json
 
@@ -36,7 +36,6 @@ fi
 echo "Contract Deployment finished!"
 
 echo "Setting up environmental variables..."
-echo "${ticketing}" | jq -r '.effects.created[] | select(.owner == "Immutable").reference.objectId'
 PACKAGE_ID=$(echo "${publish_res}" | jq -r '.effects.created[] | select(.owner == "Immutable").reference.objectId')
 newObjs=$(echo "$publish_res" | jq -r '.objectChanges[] | select(.type == "created")')
 ADMIN_CAP_ID=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::fnft_factory::AdminCap")).objectId')

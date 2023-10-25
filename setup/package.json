@@ -14,6 +14,7 @@
     "@mysten/bcs": "^0.6.1",
     "@mysten/sui.js": "^0.34.1",
     "dotenv": "^16.0.3",
+    "move-binary-format-wasm": "file:../move-binary-format-wasm",
     "typescript": "^5.0.2"
   },
   "devDependencies": {

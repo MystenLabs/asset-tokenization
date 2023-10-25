@@ -1,4 +1,4 @@
-import { normalizeSuiObjectId } from "@mysten/sui.js";
+import { normalizeSuiObjectId } from '@mysten/sui.js/utils';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { fromHEX } from "@mysten/bcs";
 import { packageId, SUI_NETWORK } from "./config";

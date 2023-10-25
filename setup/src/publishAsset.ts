@@ -1,9 +1,15 @@
-import { TransactionBlock, normalizeSuiObjectId } from "@mysten/sui.js";
+import { normalizeSuiObjectId } from "@mysten/sui.js";
+import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { fromHEX } from "@mysten/bcs";
-import { packageId } from "./config";
+import { packageId, SUI_NETWORK } from "./config";
+import { SuiClient } from '@mysten/sui.js/client';
 import { getSigner } from "./helpers";
 import { CompiledModule, getBytecode } from "./utils/bytecode-template";
 import init, * as wasm from "move-binary-format-wasm";
+
+const client = new SuiClient({
+  url: SUI_NETWORK
+});
 
 const publishNewAsset = async (
   moduleName: string,
@@ -14,15 +20,13 @@ const publishNewAsset = async (
   iconUrl: string,
   burnable: string
 ) => {
-  let signer = getSigner();
-  let admin = await signer.getAddress();
+  const signer = getSigner();
 
-  // await init("move_binary_format_wasm_bg.wasm");
   const template = getBytecode();
+
   const compiledModule = new CompiledModule(
     JSON.parse(wasm.deserialize(template))
-  )
-    .updateConstant(0, totalSupply, "100", "u64")
+  ).updateConstant(0, totalSupply, "100", "u64")
     // .updateConstant(1, symbol, "Symbol", "{ Vector: 'U8' }")
     // .updateConstant(2, asset_name, "Name", "string")
     // .updateConstant(3, description, "Description", "string")
@@ -45,23 +49,23 @@ const publishNewAsset = async (
     ],
   });
 
-  tx.transferObjects([upgradeCap], tx.pure(admin, "address"));
+  tx.transferObjects([upgradeCap], tx.pure(signer.getPublicKey().toSuiAddress(), "address"));
+  
+  const res = await client.signAndExecuteTransactionBlock({
+    transactionBlock: tx,
+    signer,
+    requestType: "WaitForLocalExecution",
+    options: {
+      showEvents: true,
+      showEffects: true,
+      showObjectChanges: true,
+      showBalanceChanges: true,
+      showInput: true,
+    }
+  }).catch((e) => console.error(e)! || null);
 
-  try {
-    let res = await signer.signAndExecuteTransactionBlock({
-      transactionBlock: tx,
-      requestType: "WaitForLocalExecution",
-      options: {
-        showObjectChanges: true,
-      },
-    });
-
-    console.log(
-      "Collection published!",
-      JSON.stringify(res.objectChanges, null, 2)
-    );
-  } catch (e) {
-    console.error("Could not publish", e);
+  if (res === null) {
+    throw new Error('Publishing failed');
   }
 };
 

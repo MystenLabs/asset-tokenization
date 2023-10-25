@@ -38,17 +38,17 @@ echo "Contract Deployment finished!"
 echo "Setting up environmental variables..."
 PACKAGE_ID=$(echo "${publish_res}" | jq -r '.effects.created[] | select(.owner == "Immutable").reference.objectId')
 newObjs=$(echo "$publish_res" | jq -r '.objectChanges[] | select(.type == "created")')
-ADMIN_CAP_ID=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::fnft_factory::AdminCap")).objectId')
 PUBLISHER_ID=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::Publisher")).objectId')
 UPGRADE_CAP_ID=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::package::UpgradeCap")).objectId')
 
 
 cat >.env <<-ENV
 PACKAGE_ID=$PACKAGE_ID
-ADMIN_CAP_ID=$ADMIN_CAP_ID
 PUBLISHER_ID=$PUBLISHER_ID
 SUI_NETWORK=$NETWORK
 ADMIN_PHRASE=$ADMIN_PHRASE
+ADMIN_ADDRESS=$ADMIN_ADDRESS
+ADMIN_SECRET_KEY=$ADMIN_SECRET_KEY
 ENV
 
 echo "Waiting for Fullnode to sync..."

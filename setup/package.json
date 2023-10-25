@@ -11,13 +11,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mysten/bcs": "^0.6.1",
-    "@mysten/sui.js": "^0.34.1",
+    "@mysten/bcs": "^0.7.4",
+    "@mysten/kiosk": "^0.7.4",
+    "@mysten/sui.js": "^0.43.2",
     "dotenv": "^16.0.3",
-    "move-binary-format-wasm": "file:../move-binary-format-wasm",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4",
+    "move-binary-format-wasm": "file:../move-binary-format-wasm"
   },
   "devDependencies": {
-    "env-cmd": "^10.1.0"
+    "env-cmd": "^10.1.0",
+    "ts-node": "^10.9.1"
   }
 }

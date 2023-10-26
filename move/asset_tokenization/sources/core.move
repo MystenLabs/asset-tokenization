@@ -1,4 +1,4 @@
-module asset_tokenization::fnft_factory {
+module asset_tokenization::core {
     // std lib imports
     use std::string::{String};
     use std::option::{Self, Option};
@@ -7,10 +7,14 @@ module asset_tokenization::fnft_factory {
 
     // Sui imports
     use sui::object::{Self, UID};
-    use sui::tx_context::TxContext;
+    use sui::tx_context::{Self, TxContext};
     use sui::url::{Url};
     use sui::vec_map::{Self, VecMap};
     use sui::balance::{Self, Supply, Balance};
+    use sui::package::{Self, Publisher};
+    use sui::transfer_policy::{Self, TransferPolicy, TransferPolicyCap};
+    use sui::display::{Self, Display};
+    use sui::transfer;
 
     const ENoSupply: u64 = 1;
     const EInsufficientTotalSupply: u64 = 2;
@@ -18,7 +22,11 @@ module asset_tokenization::fnft_factory {
     const ENonBurnable: u64 = 4;
     const EVecLengthMismatch: u64 = 5;
     const EInsufficientBalance: u64 = 6;
+    const EBadWitness: u64 = 7;
+    const ETypeNotFromModule: u64 = 8;
     
+    struct CORE has drop {}
+
     struct AssetCap<phantom T> has key, store {
         id: UID,
         supply: Supply<T>, // the current circulating supply 
@@ -45,7 +53,56 @@ module asset_tokenization::fnft_factory {
         image_url: Option<Url>,
     }
 
+    struct PlatformCap has key, store {
+        id: UID
+    }
 
+    struct Registry has key {
+        id: UID,
+        publisher: Publisher
+    }
+
+    fun init(otw: CORE, ctx: &mut TxContext) {
+        let registry = Registry {
+            id: object::new(ctx),
+            publisher: package::claim(otw, ctx)
+        };
+
+        let platform_cap = PlatformCap {
+            id: object::new(ctx)
+        };
+
+        transfer::share_object(registry);
+        transfer::public_transfer(platform_cap, tx_context::sender(ctx))
+    }
+
+    public fun setup_tp<T: drop>(registry: &mut Registry, publisher: &mut Publisher, ctx: &mut TxContext): 
+		(TransferPolicy<TokenizedAsset<T>>, TransferPolicyCap<TokenizedAsset<T>>) {
+            let type_argument = package::from_module<T>(publisher);
+            assert!(type_argument, ETypeNotFromModule);
+
+            let (policy, cap) = transfer_policy::new<TokenizedAsset<T>>(&registry.publisher, ctx);
+
+            (policy, cap)
+        }
+
+    public fun setup_display<T: drop>(registry: &mut Registry, publisher: &mut Publisher, ctx: &mut TxContext): Display<TokenizedAsset<T>> {
+        let type_argument = package::from_module<T>(publisher);
+        assert!(type_argument, ETypeNotFromModule);
+
+        let display = display::new<TokenizedAsset<T>>(&registry.publisher, ctx);
+
+        display
+    }
+
+    /// A way for the platform to access the publisher mutably
+    public fun publisher_mut(_: &PlatformCap, registry: &mut Registry): &mut Publisher {
+        let publisher_mut = &mut registry.publisher;
+
+        publisher_mut
+    }
+
+    /// Creates a new Asset representation
     public fun new_asset<T: drop>(
         witness: T, 
         total_supply: u64, 
@@ -56,6 +113,7 @@ module asset_tokenization::fnft_factory {
         burnable: bool, 
         ctx: &mut TxContext): 
         (AssetCap<T>, AssetMetadata<T>){
+        assert!(sui::types::is_one_time_witness(&witness), EBadWitness);
         assert!(total_supply > 0, EInsufficientTotalSupply);
         let asset_cap = AssetCap {
             id: object::new(ctx),
@@ -70,8 +128,7 @@ module asset_tokenization::fnft_factory {
             symbol,
             description,
             icon_url
-        };
-        
+        };        
         (asset_cap, asset_metadata)
     }
 

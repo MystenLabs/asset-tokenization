@@ -40,6 +40,7 @@ const publishNewAsset = async (
   const bytesToPublish = wasm.serialize(JSON.stringify(compiledModule));
 
   const tx = new TransactionBlock();
+  tx.setGasBudget(100000000);
   const [upgradeCap] = tx.publish({
     modules: [[...fromHEX(bytesToPublish)]],
     dependencies: [
@@ -67,6 +68,9 @@ const publishNewAsset = async (
   if (res === null) {
     throw new Error('Publishing failed');
   }
+
+  console.log('New asset published!', JSON.stringify(res, null, 2));
+
 };
 
 publishNewAsset(

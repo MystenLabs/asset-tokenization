@@ -229,4 +229,9 @@ module asset_tokenization::core {
         vec_map
     }
 
+    #[test_only]
+    public fun test_init(ctx: &mut TxContext) {
+        init(CORE {}, ctx);
+  }
+
 }

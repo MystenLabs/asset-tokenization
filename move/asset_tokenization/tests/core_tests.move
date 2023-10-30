@@ -2,8 +2,8 @@
 
 module asset_tokenization::core_tests {
     // Imports
-    use sui::test_scenario::{Self};
-    use asset_tokenization::core::{Self};
+    use sui::test_scenario::{Self, Scenario};
+    use asset_tokenization::core::{Self, Registry, PlatformCap};
     use std::string::{Self};
     use sui::url;
     use sui::transfer;
@@ -13,7 +13,8 @@ module asset_tokenization::core_tests {
     use std::string::{String};
     use std::vector::{Self};
 
-    struct ASSET_TESTS has drop {}
+    struct CORE_TESTS has drop {}
+    struct WRONG_WITNESS has drop {}
 
     // Constants
     const EWrongTotalSupply: u64 = 1;
@@ -25,13 +26,77 @@ module asset_tokenization::core_tests {
 
     // Functions
     #[test]
+    fun test_init() {
+        let scenario= test_scenario::begin(ADMIN);
+        let test = &mut scenario;
+        initialize(test, ADMIN);
+
+        // Test that the admin got the PlatformCap
+        // and that registry object was created
+        test_scenario::next_tx(test, ADMIN);
+        {
+            // Check that registry was created
+            let registry = test_scenario::take_shared<Registry>(test);
+            test_scenario::return_shared<Registry>(registry);
+        
+            //Check that PlatformCap was created and passed to admin 
+            let platform_cap = test_scenario::take_from_sender<PlatformCap>(test);
+            test_scenario::return_to_sender(test, platform_cap);
+        };
+        test_scenario::end(scenario);
+    }
+
+
+    #[test]
+    fun test_get_publisher_mut() {
+        let scenario= test_scenario::begin(ADMIN);
+        let test = &mut scenario;
+        initialize(test, ADMIN);
+
+         test_scenario::next_tx(test, ADMIN);
+        {
+            let registry = test_scenario::take_shared<Registry>(test);
+            let platform_cap = test_scenario::take_from_sender<PlatformCap>(test);
+
+            let _publisher_mut = core::publisher_mut(&platform_cap, &mut registry);
+
+            test_scenario::return_shared<Registry>(registry);
+            test_scenario::return_to_sender(test, platform_cap);
+        };
+        test_scenario::end(scenario);
+    }
+
+
+    #[test]
     fun test_create_new_asset() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+            string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
+
+        let total_supply = core::total_supply(&asset_cap);
+        let supply = core::supply(&asset_cap);
+
+        assert!(total_supply == 100, EWrongTotalSupply);
+        assert!(supply == 0, EWrongSupply);
+
+        transfer::public_freeze_object(asset_metadata);
+        transfer::public_transfer(asset_cap, tx_context::sender(ctx));
+        test_scenario::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code=core::EBadWitness)]
+    fun test_create_new_asset_with_wrong_witness() {
+        let scenario= test_scenario::begin(ADMIN);
+        let test = &mut scenario;
+        let ctx = test_scenario::ctx(test);
+        let witness = WRONG_WITNESS {};
+
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         let total_supply = core::total_supply(&asset_cap);
@@ -51,9 +116,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 0, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 0, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         transfer::public_freeze_object(asset_metadata);
@@ -67,9 +132,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         let keys = vector::empty<String>();
@@ -93,9 +158,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 5, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 5, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
 
         let keys = vector::empty<String>();
@@ -115,9 +180,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         let (keys, values) = create_vectors();
@@ -137,9 +202,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
 
         let (keys, values) = create_vectors();
@@ -157,9 +222,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
 
         let keys = vector::empty<String>();
@@ -188,9 +253,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
         
         let keys = vector::empty<String>();
@@ -213,9 +278,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
         
         let (keys, values) = create_vectors();
@@ -237,9 +302,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         let keys = vector::empty<String>();
@@ -266,9 +331,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
         
         let (keys1, values1) = create_vectors();
@@ -290,9 +355,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         let keys = vector::empty<String>();
@@ -316,9 +381,9 @@ module asset_tokenization::core_tests {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
-        let witness = ASSET_TESTS{};
+        let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"ASSET_TESTS"), 
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
 
         let keys = vector::empty<String>();
@@ -358,5 +423,13 @@ module asset_tokenization::core_tests {
         ];
 
         (keys, values)
+    }
+
+    // Helper function initialize
+    fun initialize(scenario: &mut Scenario, admin: address) {
+        test_scenario::next_tx(scenario, admin);
+        {
+            core::test_init(test_scenario::ctx(scenario));
+        };
     }
 }

@@ -52,7 +52,7 @@ const publishNewAsset = async (
 
   tx.transferObjects([upgradeCap], tx.pure(signer.getPublicKey().toSuiAddress(), "address"));
   
-  const res = await client.signAndExecuteTransactionBlock({
+  const txRes = await client.signAndExecuteTransactionBlock({
     transactionBlock: tx,
     signer,
     requestType: "WaitForLocalExecution",
@@ -65,12 +65,12 @@ const publishNewAsset = async (
     }
   }).catch((e) => console.error(e)! || null);
 
-  if (res === null) {
+  if (txRes?.effects?.status.status === "success") {
+    console.log('New asset published!', JSON.stringify(txRes, null, 2));
+  } else {
+    console.log("Error: ", txRes?.effects?.status);
     throw new Error('Publishing failed');
   }
-
-  console.log('New asset published!', JSON.stringify(res, null, 2));
-
 };
 
 publishNewAsset(

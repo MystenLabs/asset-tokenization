@@ -26,12 +26,13 @@ const publishNewAsset = async (
 
   const compiledModule = new CompiledModule(
     JSON.parse(wasm.deserialize(template))
-  ).updateConstant(0, totalSupply, "100", "u64")
-    // .updateConstant(1, symbol, "Symbol", "{ Vector: 'U8' }")
-    // .updateConstant(2, asset_name, "Name", "string")
-    // .updateConstant(3, description, "Description", "string")
-    // .updateConstant(4, iconUrl, "icon_url", "string")
-    // .updateConstant(5, burnable, "true", "boolean")
+  )
+    .updateConstant(0, totalSupply, "100", "u64")
+    .updateConstant(1, symbol, "Symbol", "string")
+    .updateConstant(2, asset_name, "Name", "string")
+    .updateConstant(3, description, "Description", "string")
+    .updateConstant(4, iconUrl, "icon_url", "string")
+    .updateConstant(5, burnable, "true", "bool")
     .changeIdentifiers({
       template: moduleName,
       TEMPLATE: moduleName.toUpperCase(),

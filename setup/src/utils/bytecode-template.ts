@@ -96,6 +96,7 @@ export class CompiledModule {
         }
 
         let { type_, data } = this.inner.constant_pool[idx];
+        type_ = JSON.stringify(type_) == JSON.stringify({ Vector: "U8" }) ? "string" : type_;
 
         if (expectedType.toLowerCase() !== type_.toLowerCase()) {
             throw new Error(`Invalid constant type; expected ${expectedType}, got ${type_}`);

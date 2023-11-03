@@ -5,7 +5,8 @@ import { packageId, SUI_NETWORK } from "./config";
 import { SuiClient } from '@mysten/sui.js/client';
 import { getSigner } from "./helpers";
 import { CompiledModule, getBytecode } from "./utils/bytecode-template";
-import init, * as wasm from "move-binary-format-wasm";
+import * as wasm from "move-binary-format/move_binary_format_wasm";
+
 
 const client = new SuiClient({
   url: SUI_NETWORK
@@ -26,7 +27,8 @@ const publishNewAsset = async (
 
   const compiledModule = new CompiledModule(
     JSON.parse(wasm.deserialize(template))
-  ).updateConstant(0, totalSupply, "100", "u64")
+  )
+  .updateConstant(0, totalSupply, "100", "u64")
     // .updateConstant(1, symbol, "Symbol", "{ Vector: 'U8' }")
     // .updateConstant(2, asset_name, "Name", "string")
     // .updateConstant(3, description, "Description", "string")
@@ -40,7 +42,7 @@ const publishNewAsset = async (
   const bytesToPublish = wasm.serialize(JSON.stringify(compiledModule));
 
   const tx = new TransactionBlock();
-  tx.setGasBudget(100000000);
+  tx.setGasBudget(200000000);
   const [upgradeCap] = tx.publish({
     modules: [[...fromHEX(bytesToPublish)]],
     dependencies: [

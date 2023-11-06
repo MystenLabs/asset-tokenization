@@ -1,0 +1,20 @@
+{
+  "name": "@mysten/move-binary-format-wasm",
+  "collaborators": [
+    "Mysten Labs <build@mystenlabs.com>"
+  ],
+  "description": "WASM variant of the move-binary-format",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mystenlabs/sui.git"
+  },
+  "files": [
+    "move_binary_format_wasm_bg.wasm",
+    "move_binary_format_wasm.js",
+    "move_binary_format_wasm.d.ts"
+  ],
+  "main": "move_binary_format_wasm.js",
+  "types": "move_binary_format_wasm.d.ts"
+}

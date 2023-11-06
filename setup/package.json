@@ -1,0 +1,25 @@
+{
+  "name": "setup",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "publish": "./publish.sh",
+    "mbf": "pnpm --filter ./move-binary-format",
+    "publish-ts": "src/publish.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mysten/bcs": "^0.7.4",
+    "@mysten/kiosk": "^0.7.4",
+    "@mysten/sui.js": "^0.43.2",
+    "dotenv": "^16.0.3",
+    "typescript": "^5.0.4",
+    "move-binary-format-wasm": "file:../move-binary-format-wasm"
+  },
+  "devDependencies": {
+    "env-cmd": "^10.1.0",
+    "ts-node": "^10.9.1"
+  }
+}

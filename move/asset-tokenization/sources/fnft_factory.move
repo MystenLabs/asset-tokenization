@@ -7,17 +7,28 @@ module asset_tokenization::fnft_factory {
 
     // Sui imports
     use sui::object::{Self, UID};
-    use sui::tx_context::TxContext;
     use sui::url::{Url};
     use sui::vec_map::{Self, VecMap};
     use sui::balance::{Self, Supply, Balance};
+    use sui::package::{Self, Publisher};
+    use sui::tx_context::{Self, TxContext};
+    use sui::transfer;
 
+    // Error codes. 
     const ENoSupply: u64 = 1;
     const EInsufficientTotalSupply: u64 = 2;
     const EUniqueAsset: u64 = 3;
     const ENonBurnable: u64 = 4;
     const EVecLengthMismatch: u64 = 5;
     const EInsufficientBalance: u64 = 6;
+    const ENotOneTimeWitness: u64 = 7;
+    const ETypeNotFromModule: u64 = 8;
+
+    /// Special object which connects creator with asset `T` type.
+    struct AssetMetadataTypeProof<phantom T: store> has key, store {
+        id: UID,
+        publisher: Publisher
+    }
     
     struct AssetCap<phantom T> has key, store {
         id: UID,
@@ -170,6 +181,21 @@ module asset_tokenization::fnft_factory {
             i = i + 1;
         };
         vec_map
+    }
+
+    /// Returns proof for asset `T` that the sender wants to create.
+    public fun claim_asset_type_proof<OTW: drop, T: store>(
+        otw: OTW, ctx: &mut TxContext
+    ) {
+        // Check that passed argument is a valid one-time witness.
+        assert!(sui::types::is_one_time_witness(&otw), ENotOneTimeWitness);
+        let publisher = package::claim(otw, ctx);
+        // Check whether `T` belongs to the same module as the publisher.
+        assert!(package::from_module<T>(&publisher), ETypeNotFromModule);
+        transfer::transfer(AssetMetadataTypeProof<T> {
+            id: object::new(ctx),
+            publisher,
+        }, tx_context::sender(ctx));
     }
 
 }

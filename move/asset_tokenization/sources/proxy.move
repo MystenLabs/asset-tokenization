@@ -56,6 +56,17 @@ module asset_tokenization::proxy {
             (policy, cap)
         }
 
+    /// Uses the fnft_factory Publisher that is nested inside the registry along with the sender's Publisher 
+    /// to create and return an empty Display for the type TokenizedAsset<T>, where T is contained within the Publisher object.
+    public fun setup_display<T: drop>(registry: &Registry, publisher: &Publisher, ctx: &mut TxContext): Display<TokenizedAsset<T>> {
+        let type_argument = package::from_package<T>(publisher);
+        assert!(type_argument, ETypeNotFromPackage);
+
+        let display = display::new<TokenizedAsset<T>>(&registry.publisher, ctx);
+
+        display
+    }
+
     /// Internal method that creates an empty TP and shares a ProtectedTP<T> object. 
     /// This can be used to bypass the lock rule under specific conditions.
     /// Invoked inside setup_tp()
@@ -68,17 +79,6 @@ module asset_tokenization::proxy {
 
         transfer::public_share_object(protected_tp);    
         transfer::public_transfer(cap, tx_context::sender(ctx));
-    }
-
-    /// Uses the fnft_factory Publisher that is nested inside the registry along with the sender's Publisher 
-    /// to create and return an empty Display for the type TokenizedAsset<T>, where T is contained within the Publisher object.
-    public fun setup_display<T: drop>(registry: &Registry, publisher: &Publisher, ctx: &mut TxContext): Display<TokenizedAsset<T>> {
-        let type_argument = package::from_package<T>(publisher);
-        assert!(type_argument, ETypeNotFromPackage);
-
-        let display = display::new<TokenizedAsset<T>>(&registry.publisher, ctx);
-
-        display
     }
 
     /// Returns the Transfer Policy for the type TokenizedAsset<T>

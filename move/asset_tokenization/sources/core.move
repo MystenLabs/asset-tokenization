@@ -23,7 +23,7 @@ module asset_tokenization::core {
     const EVecLengthMismatch: u64 = 5;
     const EInsufficientBalance: u64 = 6;
     const EBadWitness: u64 = 7;
-    const ETypeNotFromModule: u64 = 8;
+    const ETypeNotFromPackage: u64 = 8;
     const ENotExpectedBalance: u64 = 9;
     const ENotPromisedItem: u64 = 10;
     const ENotBurnedItem: u64 = 11;
@@ -107,7 +107,7 @@ module asset_tokenization::core {
     public fun setup_tp<T: drop>(registry: &Registry, publisher: &Publisher, ctx: &mut TxContext): 
 		(TransferPolicy<TokenizedAsset<T>>, TransferPolicyCap<TokenizedAsset<T>>) {
             let type_argument = package::from_package<T>(publisher);
-            assert!(type_argument, ETypeNotFromModule);
+            assert!(type_argument, ETypeNotFromPackage);
 
             create_protected_tp<T>(registry, ctx);
 
@@ -120,7 +120,7 @@ module asset_tokenization::core {
     /// This can be used to bypass the lock rule under specific conditions.
     /// Invoked inside setup_tp()
     fun create_protected_tp<T: drop>(registry: &Registry, ctx: &mut TxContext){
-        let (policy, cap) = transfer_policy::new<T>(&registry.publisher, ctx);
+        let (policy, cap) = transfer_policy::new<TokenizedAsset<T>>(&registry.publisher, ctx);
         let protected_tp = ProtectedTP {
             id: object::new(ctx),
             transfer_policy: policy
@@ -134,7 +134,7 @@ module asset_tokenization::core {
     /// to create and return an empty Display for the type TokenizedAsset<T>, where T is contained within the Publisher object.
     public fun setup_display<T: drop>(registry: &Registry, publisher: &Publisher, ctx: &mut TxContext): Display<TokenizedAsset<T>> {
         let type_argument = package::from_package<T>(publisher);
-        assert!(type_argument, ETypeNotFromModule);
+        assert!(type_argument, ETypeNotFromPackage);
 
         let display = display::new<TokenizedAsset<T>>(&registry.publisher, ctx);
 
@@ -217,7 +217,7 @@ module asset_tokenization::core {
 
     /// A helper method that can be utilized to join kiosk locked TAs. 
     /// Assists in unlocking the TA with a promise that another TA of the same type will contain its balance at the end.
-    public fun unlock_join_ta<T>(self: &TokenizedAsset<T>, to_burn: &TokenizedAsset<T>, protected_tp: &ProtectedTP<T>, transfer_request: TransferRequest<T>): JoinPromise {
+    public fun unlock_join_ta<T>(self: &TokenizedAsset<T>, to_burn: &TokenizedAsset<T>, protected_tp: &ProtectedTP<TokenizedAsset<T>>, transfer_request: TransferRequest<TokenizedAsset<T>>): JoinPromise {
         let (item, _paid, _from) = transfer_policy::confirm_request(&protected_tp.transfer_policy, transfer_request);
         let burned = object::uid_to_inner(&to_burn.id);
         assert!(item == burned, EWrongItem);
@@ -240,13 +240,20 @@ module asset_tokenization::core {
     /// Merge tokenized_asset2's balance into tokenized_asset1's balance
     /// Tokenized_asset2 is burned
     /// If the asset is unique (NFT) it can not be merged with other TAs of type T since they describe unique variations of the underlying asset T
-    public fun join<T>(tokenized_asset1: &mut TokenizedAsset<T>, tokenized_asset2: TokenizedAsset<T>) {
+    public fun join<T>(tokenized_asset1: &mut TokenizedAsset<T>, tokenized_asset2: TokenizedAsset<T>) : BurnProof {
         let ft1 = vec_map::is_empty(&tokenized_asset1.metadata);
         let ft2 = vec_map::is_empty(&tokenized_asset2.metadata);
         assert!(ft1 == true && ft2 == true, EUniqueAsset);
+
+        let burn_proof = BurnProof {
+            item: object::uid_to_inner(&tokenized_asset2.id)
+        }; 
+
         let TokenizedAsset {id, balance, metadata: _, image_url: _} = tokenized_asset2;
         object::delete(id);
         balance::join(&mut tokenized_asset1.balance, balance);
+
+        burn_proof
     }
 
     /// A method to prove that the unlocked TA has been burned and its balance has been added inside an existing TA.
@@ -261,7 +268,7 @@ module asset_tokenization::core {
 
     /// A helper method that can be utilized to burn kiosk locked TAs. 
     /// Assists in unlocking the TA with a promise that the total supply will be reduced.
-    public fun unlock_burn_ta<T>(to_burn: &TokenizedAsset<T>, asset_cap: &AssetCap<T>, protected_tp: &ProtectedTP<T>, transfer_request: TransferRequest<T>): BurnPromise {
+    public fun unlock_burn_ta<T>(to_burn: &TokenizedAsset<T>, asset_cap: &AssetCap<T>, protected_tp: &ProtectedTP<TokenizedAsset<T>>, transfer_request: TransferRequest<TokenizedAsset<T>>): BurnPromise {
         let (item, _paid, _from) = transfer_policy::confirm_request(&protected_tp.transfer_policy, transfer_request);
         let burned = object::uid_to_inner(&to_burn.id);
         assert!(burned == item, EWrongItem);

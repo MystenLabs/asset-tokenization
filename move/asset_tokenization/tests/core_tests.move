@@ -3,7 +3,8 @@
 module asset_tokenization::core_tests {
     // Imports
     use sui::test_scenario::{Self, Scenario};
-    use asset_tokenization::core::{Self, Registry, PlatformCap};
+    use asset_tokenization::core::{Self, PlatformCap};
+    use asset_tokenization::proxy::{Self, Registry};
     use std::string::{Self};
     use sui::url;
     use sui::transfer;
@@ -12,7 +13,7 @@ module asset_tokenization::core_tests {
     use std::option;
     use std::string::{String, utf8};
     use std::vector::{Self};
-    use sui::package::{Self};
+     use sui::package::{Self};
     use sui::transfer_policy;
     use sui::coin;
     use sui::display;
@@ -55,13 +56,13 @@ module asset_tokenization::core_tests {
         let witness = WRONG_WITNESS {};
         let publisher = package::test_claim(witness, &mut dummy());
 
-        let registry = core::test_registry(&mut dummy());
-        let (policy, cap) = core::setup_tp<WRONG_WITNESS>(&registry, &publisher, &mut dummy());
+        let registry = proxy::test_registry(&mut dummy());
+        let (policy, cap) = proxy::setup_tp<WRONG_WITNESS>(&registry, &publisher, &mut dummy());
 
         let coin = transfer_policy::destroy_and_withdraw(policy, cap, &mut dummy());
         coin::destroy_zero(coin);
 
-        core::test_burn_registry(registry);
+        proxy::test_burn_registry(registry);
         package::burn_publisher(publisher);
     }
 
@@ -71,15 +72,16 @@ module asset_tokenization::core_tests {
         let witness = WRONG_WITNESS {};
         let publisher = package::test_claim(witness, &mut dummy());
 
-        let registry = core::test_registry(&mut dummy());
-        let display = core::setup_display<WRONG_WITNESS>(&registry, &publisher, &mut dummy());
+        let registry = proxy::test_registry(&mut dummy());
+        let display = proxy::setup_display<WRONG_WITNESS>(&registry, &publisher, &mut dummy());
 
         display::add(&mut display, utf8(b"description"), utf8(b"test"));
 
-        core::test_burn_registry(registry);
+        proxy::test_burn_registry(registry);
         package::burn_publisher(publisher);
         transfer::public_transfer(display, ADMIN);
     }
+
 
 
     #[test]
@@ -93,7 +95,7 @@ module asset_tokenization::core_tests {
             let registry = test_scenario::take_shared<Registry>(test);
             let platform_cap = test_scenario::take_from_sender<PlatformCap>(test);
 
-            let _publisher_mut = core::publisher_mut(&platform_cap, &mut registry);
+            let _publisher_mut = proxy::publisher_mut(&platform_cap, &mut registry);
 
             test_scenario::return_shared<Registry>(registry);
             test_scenario::return_to_sender(test, platform_cap);
@@ -356,6 +358,7 @@ module asset_tokenization::core_tests {
         test_scenario::end(scenario);
     }
 
+
     #[test]
     fun test_join_fts() {
         let scenario= test_scenario::begin(ADMIN);
@@ -365,7 +368,6 @@ module asset_tokenization::core_tests {
 
         let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
-
 
         let keys = vector::empty<String>();
         let values = vector::empty<String>();
@@ -487,6 +489,10 @@ module asset_tokenization::core_tests {
 
     // Helper function initialize
     fun initialize(scenario: &mut Scenario, admin: address) {
+        test_scenario::next_tx(scenario, admin);
+        {
+            proxy::test_init(test_scenario::ctx(scenario));
+        };
         test_scenario::next_tx(scenario, admin);
         {
             core::test_init(test_scenario::ctx(scenario));

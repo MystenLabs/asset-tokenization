@@ -3,3 +3,5 @@
 .env
 **/.publish.res.json
 .code-workspace
+.coverage_map.mvcov
+.trace

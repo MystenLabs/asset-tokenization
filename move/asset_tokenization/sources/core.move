@@ -11,9 +11,6 @@ module asset_tokenization::core {
     use sui::url::{Url};
     use sui::vec_map::{Self, VecMap};
     use sui::balance::{Self, Supply, Balance};
-    use sui::package::{Self, Publisher};
-    use sui::transfer_policy::{Self, TransferPolicy, TransferPolicyCap, TransferRequest};
-    use sui::display::{Self, Display};
     use sui::transfer;
 
     const ENoSupply: u64 = 1;
@@ -23,14 +20,7 @@ module asset_tokenization::core {
     const EVecLengthMismatch: u64 = 5;
     const EInsufficientBalance: u64 = 6;
     const EBadWitness: u64 = 7;
-    const ETypeNotFromPackage: u64 = 8;
-    const ENotExpectedBalance: u64 = 9;
-    const ENotPromisedItem: u64 = 10;
-    const ENotBurnedItem: u64 = 11;
-    const ENotExpectedSupply: u64 = 12;
-    const EWrongItem: u64 = 13;
     
-    struct CORE has drop {}
 
     struct AssetCap<phantom T> has key, store {
         id: UID,
@@ -61,91 +51,18 @@ module asset_tokenization::core {
     struct PlatformCap has key, store {
         id: UID
     }
-
-    struct Registry has key {
-        id: UID,
-        publisher: Publisher
-    }
-
-    struct ProtectedTP<phantom T> has key, store {
-        id: UID,
-        transfer_policy: TransferPolicy<T>
-    }
-
-    struct JoinPromise {
-        item: ID,
-        burned: ID,
-        expected_balance: u64
-    }
-
-    struct BurnPromise {
-        expected_supply: u64
-    }
-
+  
     struct BurnProof has drop {
         item: ID
     }
 
-    /// Creates the Publisher object, wraps it inside the Registry and shares the Registry object. 
-    /// It also creates a PlatformCap and sends it to the sender.
-    fun init(otw: CORE, ctx: &mut TxContext) {
-        let registry = Registry {
-            id: object::new(ctx),
-            publisher: package::claim(otw, ctx)
-        };
-
+    /// Creates a PlatformCap and sends it to the sender.
+    fun init(ctx: &mut TxContext) {
         let platform_cap = PlatformCap {
             id: object::new(ctx)
         };
 
-        transfer::share_object(registry);
         transfer::public_transfer(platform_cap, tx_context::sender(ctx))
-    }
-    
-    /// Uses the fnft_factory Publisher that is nested inside the registry along with the sender's Publisher 
-    /// to create a Transfer Policy for the type TokenizedAsset<T>, where T is contained within the Publisher object. 
-    public fun setup_tp<T: drop>(registry: &Registry, publisher: &Publisher, ctx: &mut TxContext): 
-		(TransferPolicy<TokenizedAsset<T>>, TransferPolicyCap<TokenizedAsset<T>>) {
-            let type_argument = package::from_package<T>(publisher);
-            assert!(type_argument, ETypeNotFromPackage);
-
-            create_protected_tp<T>(registry, ctx);
-
-            let (policy, cap) = transfer_policy::new<TokenizedAsset<T>>(&registry.publisher, ctx);
-
-            (policy, cap)
-        }
-
-    /// Internal method that creates an empty TP and shares a ProtectedTP<T> object. 
-    /// This can be used to bypass the lock rule under specific conditions.
-    /// Invoked inside setup_tp()
-    fun create_protected_tp<T: drop>(registry: &Registry, ctx: &mut TxContext){
-        let (policy, cap) = transfer_policy::new<TokenizedAsset<T>>(&registry.publisher, ctx);
-        let protected_tp = ProtectedTP {
-            id: object::new(ctx),
-            transfer_policy: policy
-        };
-
-        transfer::public_share_object(protected_tp);    
-        transfer::public_transfer(cap, tx_context::sender(ctx));
-    }
-
-    /// Uses the fnft_factory Publisher that is nested inside the registry along with the sender's Publisher 
-    /// to create and return an empty Display for the type TokenizedAsset<T>, where T is contained within the Publisher object.
-    public fun setup_display<T: drop>(registry: &Registry, publisher: &Publisher, ctx: &mut TxContext): Display<TokenizedAsset<T>> {
-        let type_argument = package::from_package<T>(publisher);
-        assert!(type_argument, ETypeNotFromPackage);
-
-        let display = display::new<TokenizedAsset<T>>(&registry.publisher, ctx);
-
-        display
-    }
-
-    /// A way for the platform to access the publisher mutably
-    public fun publisher_mut(_: &PlatformCap, registry: &mut Registry): &mut Publisher {
-        let publisher_mut = &mut registry.publisher;
-
-        publisher_mut
     }
 
     /// Creates a new Asset representation
@@ -215,27 +132,6 @@ module asset_tokenization::core {
         new_tokenized_asset
     }
 
-    /// A helper method that can be utilized to join kiosk locked TAs. 
-    /// Assists in unlocking the TA with a promise that another TA of the same type will contain its balance at the end.
-    public fun unlock_join_ta<T>(self: &TokenizedAsset<T>, to_burn: &TokenizedAsset<T>, protected_tp: &ProtectedTP<TokenizedAsset<T>>, transfer_request: TransferRequest<TokenizedAsset<T>>): JoinPromise {
-        let (item, _paid, _from) = transfer_policy::confirm_request(&protected_tp.transfer_policy, transfer_request);
-        let burned = object::uid_to_inner(&to_burn.id);
-        assert!(item == burned, EWrongItem);
-
-        let self_balance = value(self);
-        let to_burn_balance = value(to_burn);
-        let expected_balance = self_balance + to_burn_balance;
-
-        let promise_item = object::uid_to_inner(&self.id);
-
-        let join_promise = JoinPromise {
-            item: promise_item,
-            burned,
-            expected_balance
-        };
-
-        join_promise
-    }
 
     /// Merge tokenized_asset2's balance into tokenized_asset1's balance
     /// Tokenized_asset2 is burned
@@ -256,35 +152,6 @@ module asset_tokenization::core {
         burn_proof
     }
 
-    /// A method to prove that the unlocked TA has been burned and its balance has been added inside an existing TA.
-    public fun prove_join<T>(self: &TokenizedAsset<T>, promise: JoinPromise, proof: BurnProof) {
-        let JoinPromise {item, burned, expected_balance} = promise;
-        let balance = value(self);
-        let id = object::uid_to_inner(&self.id);
-        assert!(balance == expected_balance, ENotExpectedBalance);
-        assert!(id == item, ENotPromisedItem);
-        assert!(proof.item == burned, ENotBurnedItem);
-    }
-
-    /// A helper method that can be utilized to burn kiosk locked TAs. 
-    /// Assists in unlocking the TA with a promise that the total supply will be reduced.
-    public fun unlock_burn_ta<T>(to_burn: &TokenizedAsset<T>, asset_cap: &AssetCap<T>, protected_tp: &ProtectedTP<TokenizedAsset<T>>, transfer_request: TransferRequest<TokenizedAsset<T>>): BurnPromise {
-        let (item, _paid, _from) = transfer_policy::confirm_request(&protected_tp.transfer_policy, transfer_request);
-        let burned = object::uid_to_inner(&to_burn.id);
-        assert!(burned == item, EWrongItem);
-
-        let to_burn_balance = value(to_burn);
-        let current_supply = supply(asset_cap);
-
-        let expected_supply = current_supply - to_burn_balance;
-
-        let burn_promise = BurnPromise {
-            expected_supply
-        };
-
-        burn_promise
-    }
-
     /// Destroy the tokenized asset and decrease the supply in `cap` accordingly
     public fun burn<T>(cap: &mut AssetCap<T>, tokenized_asset: TokenizedAsset<T>) {
         assert!(cap.burnable == true, ENonBurnable);
@@ -294,14 +161,6 @@ module asset_tokenization::core {
         object::delete(id);
         balance::decrease_supply(&mut cap.supply, balance);
     }
-
-    /// Ensures that the amount burned has in fact reduced the total supply of the asset cap. 
-    public fun prove_burn<T>(asset_cap: &AssetCap<T>, promise: BurnPromise) {
-        let BurnPromise {expected_supply} = promise;
-        let current_supply = supply(asset_cap);
-        assert!(current_supply == expected_supply, ENotExpectedSupply);
-    }
-
 
     /// Returns the value of the total supply
     public fun total_supply<T>(cap: &AssetCap<T>): u64 {
@@ -322,6 +181,16 @@ module asset_tokenization::core {
         balance
     }
 
+    /// Returns the id of a TokenizedAsset<T>
+    public fun id<T>(tokenized_asset: &TokenizedAsset<T>): ID {
+        object::uid_to_inner(&tokenized_asset.id)
+    }
+
+    /// Returns the item of a BurnProof
+    public fun item(burn_proof: &BurnProof): ID {
+        burn_proof.item
+    }
+
     /// Internal helper function used to populate a VecMap<String, String>
     public fun create_vec_map_from_arrays(keys: vector<String>, values: vector<String>): VecMap<String, String> {
         let vec_map = vec_map::empty<String, String>();
@@ -339,23 +208,7 @@ module asset_tokenization::core {
 
     #[test_only]
     public fun test_init(ctx: &mut TxContext) {
-        init(CORE {}, ctx);
-  }
-
-    #[test_only]
-    public fun test_registry(ctx: &mut TxContext): Registry{
-        let registry = Registry {
-            id: object::new(ctx),
-            publisher: package::claim(CORE {}, ctx)
-        };
-        registry
-    }
-
-    #[test_only]
-    public fun test_burn_registry(registry: Registry) {
-        let Registry {id, publisher} = registry;
-        object::delete(id);
-        package::burn_publisher(publisher);
+        init(ctx);
     }
 
 }

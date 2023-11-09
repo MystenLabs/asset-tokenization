@@ -3,7 +3,8 @@
 module asset_tokenization::core_tests {
     // Imports
     use sui::test_scenario::{Self, Scenario};
-    use asset_tokenization::core::{Self, Registry, PlatformCap};
+    use asset_tokenization::core::{Self, PlatformCap};
+    use asset_tokenization::proxy::{Self, Registry};
     use std::string::{Self};
     use sui::url;
     use sui::transfer;
@@ -58,7 +59,7 @@ module asset_tokenization::core_tests {
             let registry = test_scenario::take_shared<Registry>(test);
             let platform_cap = test_scenario::take_from_sender<PlatformCap>(test);
 
-            let _publisher_mut = core::publisher_mut(&platform_cap, &mut registry);
+            let _publisher_mut = proxy::publisher_mut(&platform_cap, &mut registry);
 
             test_scenario::return_shared<Registry>(registry);
             test_scenario::return_to_sender(test, platform_cap);
@@ -427,6 +428,10 @@ module asset_tokenization::core_tests {
 
     // Helper function initialize
     fun initialize(scenario: &mut Scenario, admin: address) {
+        test_scenario::next_tx(scenario, admin);
+        {
+            proxy::test_init(test_scenario::ctx(scenario));
+        };
         test_scenario::next_tx(scenario, admin);
         {
             core::test_init(test_scenario::ctx(scenario));

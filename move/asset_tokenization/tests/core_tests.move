@@ -8,11 +8,15 @@ module asset_tokenization::core_tests {
     use std::string::{Self};
     use sui::url;
     use sui::transfer;
-    use sui::tx_context::{Self};
+    use sui::tx_context::{Self, dummy};
     use std::ascii;
     use std::option;
-    use std::string::{String};
+    use std::string::{String, utf8};
     use std::vector::{Self};
+     use sui::package::{Self};
+    use sui::transfer_policy;
+    use sui::coin;
+    use sui::display;
 
     struct CORE_TESTS has drop {}
     struct WRONG_WITNESS has drop {}
@@ -46,6 +50,38 @@ module asset_tokenization::core_tests {
         };
         test_scenario::end(scenario);
     }
+
+    #[test]
+    fun test_setup_tp() {
+        let witness = WRONG_WITNESS {};
+        let publisher = package::test_claim(witness, &mut dummy());
+
+        let registry = proxy::test_registry(&mut dummy());
+        let (policy, cap) = proxy::setup_tp<WRONG_WITNESS>(&registry, &publisher, &mut dummy());
+
+        let coin = transfer_policy::destroy_and_withdraw(policy, cap, &mut dummy());
+        coin::destroy_zero(coin);
+
+        proxy::test_burn_registry(registry);
+        package::burn_publisher(publisher);
+    }
+
+
+     #[test]
+    fun test_setup_display() {
+        let witness = WRONG_WITNESS {};
+        let publisher = package::test_claim(witness, &mut dummy());
+
+        let registry = proxy::test_registry(&mut dummy());
+        let display = proxy::setup_display<WRONG_WITNESS>(&registry, &publisher, &mut dummy());
+
+        display::add(&mut display, utf8(b"description"), utf8(b"test"));
+
+        proxy::test_burn_registry(registry);
+        package::burn_publisher(publisher);
+        transfer::public_transfer(display, ADMIN);
+    }
+
 
 
     #[test]
@@ -250,7 +286,7 @@ module asset_tokenization::core_tests {
 
     #[test]
     #[expected_failure(abort_code=core::EInsufficientBalance)]
-        fun test_split_fts_with_insufficient_balance() {
+        fun test_split_fts_with_insufficient_balance_to_split() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
@@ -263,6 +299,31 @@ module asset_tokenization::core_tests {
         let values = vector::empty<String>();
 
         let ft = core::mint(&mut asset_cap, keys, values, 3, ctx);
+
+        let new_tokenized_asset = core::split(&mut ft, 5, ctx);
+
+        transfer::public_freeze_object(asset_metadata);
+        transfer::public_transfer(asset_cap, tx_context::sender(ctx));
+        transfer::public_transfer(ft, USER);
+        transfer::public_transfer(new_tokenized_asset, USER);
+        test_scenario::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code=core::EInsufficientBalance)]
+        fun test_split_fts_with_insufficient_balance_value() {
+        let scenario= test_scenario::begin(ADMIN);
+        let test = &mut scenario;
+        let ctx = test_scenario::ctx(test);
+        let witness = CORE_TESTS {};
+
+        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+            string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
+        
+        let keys = vector::empty<String>();
+        let values = vector::empty<String>();
+
+        let ft = core::mint(&mut asset_cap, keys, values, 1, ctx);
 
         let new_tokenized_asset = core::split(&mut ft, 5, ctx);
 

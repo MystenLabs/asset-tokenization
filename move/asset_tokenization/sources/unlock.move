@@ -1,3 +1,8 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
+/// ???
+/// TODO: See https://github.com/MystenLabs/sui/blob/main/kiosk/examples/unlock.move
 module asset_tokenization::unlock {
 
     // Sui imports

@@ -1,4 +1,5 @@
-
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
 
 module asset_tokenization::core {
     // std lib imports
@@ -204,7 +205,7 @@ module asset_tokenization::core {
 
     /// TODO: internal ???
     /// Internal helper function used to populate a VecMap<String, String>
-    fun create_vec_map_from_arrays(
+    public(friend) fun create_vec_map_from_arrays(
         keys: vector<String>,
         values: vector<String>
     ): VecMap<String, String> {
@@ -225,6 +226,7 @@ module asset_tokenization::core {
         vec_map
     }
 
+    #[test_only] friend asset_tokenization::core_tests;
     #[test_only]
     public fun test_init(ctx: &mut TxContext) {
         init(ctx);

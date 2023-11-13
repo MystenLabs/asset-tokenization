@@ -1,0 +1,34 @@
+{
+    "dependencies": {
+      "@mysten/bcs": "^0.8.1",
+      "@mysten/kiosk": "^0.7.6",
+      "@mysten/sui.js": "^0.44.0",
+      "dotenv": "^16.3.1"
+    },
+    "scripts": {
+      "start": "tsc && node dist/programmable_transactions.js",
+      "mint": "tsc && node dist/mint.js",
+      "mint-lock": "tsc && node dist/mintAndLock.js",
+      "join": "tsc && node dist/join.js",
+      "burn": "tsc && node dist/burn.js",
+      "split": "tsc && node dist/split.js",
+      "quering-kiosk": "tsc && node dist/queringKiosk.js",
+      "quering-kiosk-content": "tsc && node dist/queringKioskContent.js",
+      "create-kiosk": "tsc && node dist/createNewKiosk.js",
+      "create-personal-kiosk": "tsc && node dist/createNewPersonalKiosk.js",
+      "take-from-kiosk": "tsc && node dist/takeFromKiosk.js",
+      "lock-item": "tsc && node dist/lockItemInKiosk.js",
+      "create-transfer-policy": "tsc && node dist/createTransferPolicy.js", 
+      "list-item": "tsc && node dist/listItem.js",
+      "delist-item": "tsc && node dist/delistItem.js",
+      "purchase-item": "tsc && node dist/purchaseItem.js",
+      "get-total-supply": "tsc && node dist/getTotalSupply.js",
+      "get-supply": "tsc && node dist/getSupply.js",
+      "get-balance": "tsc && node dist/getBalance.js",
+      "create-tp-rules": "tsc && node dist/transferPolicyRules.js",
+      "select-kiosk": "tsc && node dist/selectKiosk.js"
+    },
+    "devDependencies": {
+      "@types/node": "^20.8.6"
+    }
+}

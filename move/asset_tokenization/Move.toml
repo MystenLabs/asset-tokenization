@@ -1,9 +1,10 @@
 [package]
 name = "asset_tokenization"
 version = "0.0.1"
+published-at = "0x8e2a297a744d65b5c36a6c9026d7bd05470974601d3e06aeef8bc9e61f7c71a8"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
 
 [addresses]
-asset_tokenization = "0x0"
+asset_tokenization = "0x8e2a297a744d65b5c36a6c9026d7bd05470974601d3e06aeef8bc9e61f7c71a8"

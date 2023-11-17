@@ -1,12 +1,13 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-module asset_tokenization::core {
+module asset_tokenization::tokenized_asset {
     // std lib imports
     use std::string::{String};
     use std::option::{Self, Option};
     use std::ascii;
     use std::vector;
+    use std::type_name::{Self};
 
     // Sui imports
     use sui::object::{Self, UID, ID};
@@ -15,7 +16,8 @@ module asset_tokenization::core {
     use sui::vec_map::{Self, VecMap};
     use sui::balance::{Self, Supply, Balance};
     use sui::transfer;
-
+    use sui::event::emit;
+    
     const ENoSupply: u64 = 1;
     const EInsufficientTotalSupply: u64 = 2;
     const EUniqueAsset: u64 = 3;
@@ -63,11 +65,14 @@ module asset_tokenization::core {
     struct PlatformCap has key, store { id: UID }
 
     /// ???
-    struct BurnProof has drop { item: ID }
+    struct AssetCreated has copy, drop {
+        asset_metadata: ID,
+        name: ascii::String
+    }
 
     /// Creates a PlatformCap and sends it to the sender.
     fun init(ctx: &mut TxContext) {
-        transfer::public_transfer(PlatformCap {
+        transfer::transfer(PlatformCap {
             id: object::new(ctx)
         }, tx_context::sender(ctx))
     }
@@ -100,6 +105,11 @@ module asset_tokenization::core {
             description,
             icon_url
         };
+
+        emit(AssetCreated {
+            asset_metadata: object::id(&asset_metadata),
+            name: type_name::into_string(type_name::get<T>()) 
+        });
 
         (asset_cap, asset_metadata)
     }
@@ -155,19 +165,17 @@ module asset_tokenization::core {
     public fun join<T>(
         self: &mut TokenizedAsset<T>,
         other: TokenizedAsset<T>
-    ): BurnProof {
+    ): ID {
         let ft1 = vec_map::is_empty(&self.metadata);
         let ft2 = vec_map::is_empty(&other.metadata);
         assert!(ft1 == true && ft2 == true, EUniqueAsset);
 
-        // TODO: what happens with `image_url`? Will there be a difference
-        // between "A and B" and "B and A" scenarios?
         let item = object::id(&other);
         let TokenizedAsset { id, balance, metadata: _, image_url: _ } = other;
         balance::join(&mut self.balance, balance);
         object::delete(id);
 
-        BurnProof { item }
+        item
     }
 
     /// Destroy the tokenized asset and decrease the supply in `cap` accordingly
@@ -198,14 +206,8 @@ module asset_tokenization::core {
         balance::value(&tokenized_asset.balance)
     }
 
-    /// Returns the item of a BurnProof
-    public fun item(burn_proof: &BurnProof): ID {
-        burn_proof.item
-    }
-
-    /// TODO: internal ???
     /// Internal helper function used to populate a VecMap<String, String>
-    public(friend) fun create_vec_map_from_arrays(
+    fun create_vec_map_from_arrays(
         keys: vector<String>,
         values: vector<String>
     ): VecMap<String, String> {
@@ -217,9 +219,9 @@ module asset_tokenization::core {
 
         while (i < len) {
             vec_map::insert(
-                &mut vec_map,
-                vector::pop_back(&mut keys),
-                vector::pop_back(&mut values),
+                &mut vec_map, 
+                *vector::borrow(&keys, i),
+                *vector::borrow(&values, i)
             );
             i = i + 1;
         };

@@ -5,14 +5,16 @@ module asset_tokenization::proxy {
 
     // Sui imports
     use sui::object::{Self, UID};
-    use sui::tx_context::{Self, TxContext};
+    use sui::tx_context::TxContext;
     use sui::package::{Self, Publisher};
     use sui::transfer_policy::{Self, TransferPolicy, TransferPolicyCap};
     use sui::display::{Self, Display};
     use sui::transfer;
 
-    // Core imports
-    use asset_tokenization::core::{TokenizedAsset, PlatformCap};
+    // Asset tokenization imports
+    use asset_tokenization::tokenized_asset::{TokenizedAsset, PlatformCap};
+
+    friend asset_tokenization::unlock;
 
     const ETypeNotFromPackage: u64 = 1;
 
@@ -23,6 +25,7 @@ module asset_tokenization::proxy {
 
     struct ProtectedTP<phantom T> has key, store {
         id: UID,
+        policy_cap: TransferPolicyCap<T>,
         transfer_policy: TransferPolicy<T>
     }
 
@@ -54,7 +57,7 @@ module asset_tokenization::proxy {
 
     /// Uses the fnft_factory Publisher that is nested inside the registry along with the sender's Publisher
     /// to create and return an empty Display for the type TokenizedAsset<T>, where T is contained within the Publisher object.
-    public fun setup_display<T: drop>(
+    public fun new_display<T: drop>(
         registry: &Registry,
         publisher: &Publisher,
         ctx: &mut TxContext
@@ -65,7 +68,7 @@ module asset_tokenization::proxy {
 
     /// Returns the Transfer Policy for the type TokenizedAsset<T>
     /// TODO: DANGER: This is a bypass to the lock rule.
-    public fun transfer_policy<T>(protected_tp: &ProtectedTP<T>): &TransferPolicy<T> {
+    public(friend) fun transfer_policy<T>(protected_tp: &ProtectedTP<T>): &TransferPolicy<T> {
         &protected_tp.transfer_policy
     }
 
@@ -82,13 +85,15 @@ module asset_tokenization::proxy {
     /// Invoked inside setup_tp()
     fun create_protected_tp<T: drop>(registry: &Registry, ctx: &mut TxContext) {
         let (transfer_policy, cap) = transfer_policy::new<TokenizedAsset<T>>(&registry.publisher, ctx);
+        // Storing inside the cap the ProtectedTP with no way to access it
+        // as we do not want to modify this policy
         let protected_tp = ProtectedTP {
             transfer_policy,
-            id: object::new(ctx),
+            policy_cap: cap,
+            id: object::new(ctx)
         };
 
         transfer::share_object(protected_tp);
-        transfer::public_transfer(cap, tx_context::sender(ctx));
     }
 
     #[test_only]

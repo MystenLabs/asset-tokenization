@@ -1,15 +1,17 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-/// ???
-/// TODO: See https://github.com/MystenLabs/sui/blob/main/kiosk/examples/unlock.move
+/// This module unlocks a Tokenized Asset (TA) for the purposes of authorized burning
+/// and joining. It enables TA type creators to support the afformetioned operations by
+/// unlocking Kiosk assets without fulfilling the default set
+/// of requirements (rules / policies).
 module asset_tokenization::unlock {
 
     // Sui imports
     use sui::object::{Self, ID};
     use sui::transfer_policy::{Self, TransferRequest};
 
-    use asset_tokenization::core::{Self, TokenizedAsset, BurnProof, AssetCap};
+    use asset_tokenization::tokenized_asset::{Self, TokenizedAsset, AssetCap};
     use asset_tokenization::proxy::{Self, ProtectedTP};
 
     const EWrongItem: u64 = 1;
@@ -36,9 +38,9 @@ module asset_tokenization::unlock {
 
     /// A helper method that can be utilized to join kiosk locked TAs.
     /// Assists in unlocking the TA with a promise that another TA of the same type will contain its balance at the end.
-    public fun unlock_join_ta<T>(
-        self: &TokenizedAsset<T>, // a
-        to_burn: &TokenizedAsset<T>, // b
+    public fun asset_from_kiosk_to_join<T>(
+        self: &TokenizedAsset<T>, // A
+        to_burn: &TokenizedAsset<T>, // B
         protected_tp: &ProtectedTP<TokenizedAsset<T>>, // unlocker
         transfer_request: TransferRequest<TokenizedAsset<T>> // transfer request for b
     ): JoinPromise {
@@ -49,8 +51,8 @@ module asset_tokenization::unlock {
         let burned = object::id(to_burn);
         assert!(item == burned, EWrongItem);
 
-        let self_balance = core::value(self);
-        let to_burn_balance = core::value(to_burn);
+        let self_balance = tokenized_asset::value(self);
+        let to_burn_balance = tokenized_asset::value(to_burn);
         let expected_balance = self_balance + to_burn_balance;
 
         let promise_item = object::id(self);
@@ -64,18 +66,18 @@ module asset_tokenization::unlock {
 
 
     /// A method to prove that the unlocked TA has been burned and its balance has been added inside an existing TA.
-    public fun prove_join<T>(self: &TokenizedAsset<T>, promise: JoinPromise, proof: BurnProof) {
+    public fun prove_join<T>(self: &TokenizedAsset<T>, promise: JoinPromise, proof: ID) {
         let JoinPromise {item, burned, expected_balance} = promise;
-        let balance = core::value(self);
+        let balance = tokenized_asset::value(self);
         let id = object::id(self);
         assert!(balance == expected_balance, ENotExpectedBalance);
         assert!(id == item, ENotPromisedItem);
-        assert!(core::item(&proof) == burned, ENotBurnedItem);
+        assert!(proof == burned, ENotBurnedItem);
     }
 
     /// A helper method that can be utilized to burn kiosk locked TAs.
     /// Assists in unlocking the TA with a promise that the total supply will be reduced.
-    public fun unlock_burn_ta<T>(
+    public fun asset_from_kiosk_to_burn<T>(
         to_burn: &TokenizedAsset<T>,
         asset_cap: &AssetCap<T>,
         protected_tp: &ProtectedTP<TokenizedAsset<T>>,
@@ -87,8 +89,8 @@ module asset_tokenization::unlock {
 
         assert!(burned == item, EWrongItem);
 
-        let to_burn_balance = core::value(to_burn);
-        let current_supply = core::supply(asset_cap);
+        let to_burn_balance = tokenized_asset::value(to_burn);
+        let current_supply = tokenized_asset::supply(asset_cap);
 
         let expected_supply = current_supply - to_burn_balance;
 
@@ -100,7 +102,7 @@ module asset_tokenization::unlock {
     /// Ensures that the amount burned has in fact reduced the total supply of the asset cap.
     public fun prove_burn<T>(asset_cap: &AssetCap<T>, promise: BurnPromise) {
         let BurnPromise { expected_supply } = promise;
-        let current_supply = core::supply(asset_cap);
+        let current_supply = tokenized_asset::supply(asset_cap);
         assert!(current_supply == expected_supply, ENotExpectedSupply);
     }
 }

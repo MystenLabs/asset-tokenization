@@ -3,7 +3,7 @@
 module asset_tokenization::core_tests {
     // Imports
     use sui::test_scenario::{Self, Scenario};
-    use asset_tokenization::core::{Self, PlatformCap};
+    use asset_tokenization::tokenized_asset::{Self, PlatformCap};
     use asset_tokenization::proxy::{Self, Registry};
     use std::string::{Self};
     use sui::url;
@@ -73,7 +73,7 @@ module asset_tokenization::core_tests {
         let publisher = package::test_claim(witness, &mut dummy());
 
         let registry = proxy::test_registry(&mut dummy());
-        let display = proxy::setup_display<WRONG_WITNESS>(&registry, &publisher, &mut dummy());
+        let display = proxy::new_display<WRONG_WITNESS>(&registry, &publisher, &mut dummy());
 
         display::add(&mut display, utf8(b"description"), utf8(b"test"));
 
@@ -111,11 +111,11 @@ module asset_tokenization::core_tests {
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
-        let total_supply = core::total_supply(&asset_cap);
-        let supply = core::supply(&asset_cap);
+        let total_supply = tokenized_asset::total_supply(&asset_cap);
+        let supply = tokenized_asset::supply(&asset_cap);
 
         assert!(total_supply == 100, EWrongTotalSupply);
         assert!(supply == 0, EWrongSupply);
@@ -126,18 +126,18 @@ module asset_tokenization::core_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code=core::EBadWitness)]
+    #[expected_failure(abort_code=tokenized_asset::EBadWitness)]
     fun test_create_new_asset_with_wrong_witness() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
         let witness = WRONG_WITNESS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
-        let total_supply = core::total_supply(&asset_cap);
-        let supply = core::supply(&asset_cap);
+        let total_supply = tokenized_asset::total_supply(&asset_cap);
+        let supply = tokenized_asset::supply(&asset_cap);
 
         assert!(total_supply == 100, EWrongTotalSupply);
         assert!(supply == 0, EWrongSupply);
@@ -148,14 +148,14 @@ module asset_tokenization::core_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code=core::EInsufficientTotalSupply)]
+    #[expected_failure(abort_code=tokenized_asset::EInsufficientTotalSupply)]
     fun test_create_new_asset_with_insufficient_total_supply() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 0, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 0, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         transfer::public_freeze_object(asset_metadata);
@@ -171,14 +171,14 @@ module asset_tokenization::core_tests {
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         let keys = vector::empty<String>();
         let values = vector::empty<String>();
 
-        let ft = core::mint(&mut asset_cap, keys, values, 1, ctx);
-        let value = core::value(&ft);
+        let ft = tokenized_asset::mint(&mut asset_cap, keys, values, 1, ctx);
+        let value = tokenized_asset::value(&ft);
 
         assert!(value == 1, EWrongBalanceValue);
 
@@ -190,20 +190,20 @@ module asset_tokenization::core_tests {
 
 
     #[test]
-    #[expected_failure(abort_code=core::ENoSupply)]
+    #[expected_failure(abort_code=tokenized_asset::ENoSupply)]
     fun test_no_supply_to_mint() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 5, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 5, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
 
         let keys = vector::empty<String>();
         let values = vector::empty<String>();
 
-        let ft = core::mint(&mut asset_cap, keys, values, 6, ctx);
+        let ft = tokenized_asset::mint(&mut asset_cap, keys, values, 6, ctx);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
@@ -219,12 +219,12 @@ module asset_tokenization::core_tests {
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         let (keys, values) = create_vectors();
 
-        let nft = core::mint(&mut asset_cap, keys, values, 1, ctx);
+        let nft = tokenized_asset::mint(&mut asset_cap, keys, values, 1, ctx);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
@@ -234,19 +234,19 @@ module asset_tokenization::core_tests {
 
 
    #[test]
-   #[expected_failure(abort_code=core::EUniqueAsset)]
+   #[expected_failure(abort_code=tokenized_asset::EUniqueAsset)]
     fun test_mint_non_unit_nft() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
 
         let (keys, values) = create_vectors();
 
-        let nft = core::mint(&mut asset_cap, keys, values, 5, ctx);
+        let nft = tokenized_asset::mint(&mut asset_cap, keys, values, 5, ctx);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
@@ -261,18 +261,18 @@ module asset_tokenization::core_tests {
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
 
         let keys = vector::empty<String>();
         let values = vector::empty<String>();
 
-        let ft = core::mint(&mut asset_cap, keys, values, 5, ctx);
+        let ft = tokenized_asset::mint(&mut asset_cap, keys, values, 5, ctx);
 
-        let new_tokenized_asset = core::split(&mut ft, 3, ctx);
+        let new_tokenized_asset = tokenized_asset::split(&mut ft, 3, ctx);
 
-        let ft_decreased_balance = core::value(&ft);
-        let new_tokenized_asset_balance = core::value(&new_tokenized_asset);
+        let ft_decreased_balance = tokenized_asset::value(&ft);
+        let new_tokenized_asset_balance = tokenized_asset::value(&new_tokenized_asset);
 
         assert!(ft_decreased_balance == 2, EWrongBalanceValue);
         assert!(new_tokenized_asset_balance == 3, EWrongBalanceValue);
@@ -285,22 +285,22 @@ module asset_tokenization::core_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code=core::EInsufficientBalance)]
+    #[expected_failure(abort_code=tokenized_asset::EInsufficientBalance)]
         fun test_split_fts_with_insufficient_balance_to_split() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
         
         let keys = vector::empty<String>();
         let values = vector::empty<String>();
 
-        let ft = core::mint(&mut asset_cap, keys, values, 3, ctx);
+        let ft = tokenized_asset::mint(&mut asset_cap, keys, values, 3, ctx);
 
-        let new_tokenized_asset = core::split(&mut ft, 5, ctx);
+        let new_tokenized_asset = tokenized_asset::split(&mut ft, 5, ctx);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
@@ -310,22 +310,22 @@ module asset_tokenization::core_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code=core::EInsufficientBalance)]
+    #[expected_failure(abort_code=tokenized_asset::EInsufficientBalance)]
         fun test_split_fts_with_insufficient_balance_value() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
         
         let keys = vector::empty<String>();
         let values = vector::empty<String>();
 
-        let ft = core::mint(&mut asset_cap, keys, values, 1, ctx);
+        let ft = tokenized_asset::mint(&mut asset_cap, keys, values, 1, ctx);
 
-        let new_tokenized_asset = core::split(&mut ft, 5, ctx);
+        let new_tokenized_asset = tokenized_asset::split(&mut ft, 5, ctx);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
@@ -335,21 +335,21 @@ module asset_tokenization::core_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code=core::EUniqueAsset)]
+    #[expected_failure(abort_code=tokenized_asset::EUniqueAsset)]
         fun test_split_nfts() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
         
         let (keys, values) = create_vectors();
 
-        let nft = core::mint(&mut asset_cap, keys, values, 1, ctx);
+        let nft = tokenized_asset::mint(&mut asset_cap, keys, values, 1, ctx);
 
-        let new_tokenized_asset = core::split(&mut nft, 1, ctx);
+        let new_tokenized_asset = tokenized_asset::split(&mut nft, 1, ctx);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
@@ -366,18 +366,18 @@ module asset_tokenization::core_tests {
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         let keys = vector::empty<String>();
         let values = vector::empty<String>();
 
-        let ft1 = core::mint(&mut asset_cap, keys, values, 2, ctx);
-        let ft2 = core::mint(&mut asset_cap, keys, values, 3, ctx);
+        let ft1 = tokenized_asset::mint(&mut asset_cap, keys, values, 2, ctx);
+        let ft2 = tokenized_asset::mint(&mut asset_cap, keys, values, 3, ctx);
 
-        core::join(&mut ft1, ft2);
+        tokenized_asset::join(&mut ft1, ft2);
 
-        let joined_balance = core::value(&ft1);
+        let joined_balance = tokenized_asset::value(&ft1);
         assert!(joined_balance == 5, EWrongBalanceValue);
 
         transfer::public_freeze_object(asset_metadata);
@@ -388,23 +388,23 @@ module asset_tokenization::core_tests {
 
 
     #[test]
-    #[expected_failure(abort_code=core::EUniqueAsset)]
+    #[expected_failure(abort_code=tokenized_asset::EUniqueAsset)]
         fun test_join_nfts() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
         
         let (keys1, values1) = create_vectors();
-        let nft1 = core::mint(&mut asset_cap, keys1, values1, 1, ctx);
+        let nft1 = tokenized_asset::mint(&mut asset_cap, keys1, values1, 1, ctx);
 
         let (keys2, values2) = create_vectors();
-        let nft2 = core::mint(&mut asset_cap, keys2, values2, 1, ctx);
+        let nft2 = tokenized_asset::mint(&mut asset_cap, keys2, values2, 1, ctx);
 
-        core::join(&mut nft1, nft2);
+        tokenized_asset::join(&mut nft1, nft2);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
@@ -419,16 +419,16 @@ module asset_tokenization::core_tests {
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), true, ctx);
 
         let keys = vector::empty<String>();
         let values = vector::empty<String>();
-        let tokenized_asset = core::mint(&mut asset_cap, keys, values, 1, ctx);
+        let new_tokenized_asset = tokenized_asset::mint(&mut asset_cap, keys, values, 1, ctx);
 
-        core::burn(&mut asset_cap, tokenized_asset);
+        tokenized_asset::burn(&mut asset_cap, new_tokenized_asset);
 
-        let supply = core::supply(&asset_cap);
+        let supply = tokenized_asset::supply(&asset_cap);
         assert!(supply == 0, EWrongSupply);
 
         transfer::public_freeze_object(asset_metadata);
@@ -438,21 +438,21 @@ module asset_tokenization::core_tests {
 
 
     #[test]
-    #[expected_failure(abort_code=core::ENonBurnable)]
+    #[expected_failure(abort_code=tokenized_asset::ENonBurnable)]
     fun test_burn_unburnable() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
         let ctx = test_scenario::ctx(test);
         let witness = CORE_TESTS {};
 
-        let (asset_cap, asset_metadata) = core::new_asset(witness, 100, ascii::string(b"CORE "), 
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
             string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
 
         let keys = vector::empty<String>();
         let values = vector::empty<String>();
-        let tokenized_asset = core::mint(&mut asset_cap, keys, values, 1, ctx);
+        let new_tokenized_asset = tokenized_asset::mint(&mut asset_cap, keys, values, 1, ctx);
 
-        core::burn(&mut asset_cap, tokenized_asset);
+        tokenized_asset::burn(&mut asset_cap, new_tokenized_asset);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));
@@ -460,12 +460,22 @@ module asset_tokenization::core_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code=core::EVecLengthMismatch)]
-    fun test_create_vec_map_from_arrays() {
+    #[expected_failure(abort_code=tokenized_asset::EVecLengthMismatch)]
+    fun test_invalid_vec_map() {
+        let scenario= test_scenario::begin(ADMIN);
+        let test = &mut scenario;
+        let ctx = test_scenario::ctx(test);
+        let witness = CORE_TESTS {};
+
+        let (asset_cap, _asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
+            string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
+
         let (keys, values) = create_vectors();
         vector::push_back(&mut values, string::utf8(b"No"));
 
-        let _vec_map = core::create_vec_map_from_arrays(keys, values);
+        let _new_tokenized_asset = tokenized_asset::mint(&mut asset_cap, keys, values, 1, ctx);
+
+        abort 1337
     }
 
 
@@ -495,7 +505,7 @@ module asset_tokenization::core_tests {
         };
         test_scenario::next_tx(scenario, admin);
         {
-            core::test_init(test_scenario::ctx(scenario));
+            tokenized_asset::test_init(test_scenario::ctx(scenario));
         };
     }
 }

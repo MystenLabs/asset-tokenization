@@ -9,10 +9,10 @@ type TokenizedAssetFields = {
   balance: number
 }
 
-export async function getValue() {
+export async function GetBalance(tokenized_asset?: string) {
     const tx = new TransactionBlock();
   
-    const tokenized_asset_id = process.env.TOKENIZED_ASSET as string;
+    const tokenized_asset_id = tokenized_asset ?? process.env.TOKENIZED_ASSET as string;
 
     const tokenized_asset_object = await client.getObject({
       id: tokenized_asset_id,
@@ -24,6 +24,5 @@ export async function getValue() {
     const tokenized_asset_balance = tokenized_asset_object.data?.content?.dataType == 'moveObject' && (tokenized_asset_object.data?.content.fields as TokenizedAssetFields).balance;
 
     console.log("Tokenized Asset Balance:", tokenized_asset_balance)
+    return tokenized_asset_balance;
 }
-
-getValue();

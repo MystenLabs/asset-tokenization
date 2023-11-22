@@ -2,9 +2,16 @@ import { config } from "dotenv";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
+import { KioskClient, Network, TransferPolicyTransaction, percentageToBasisPoints } from "@mysten/kiosk";
+
 config({});
 
 const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+
+const kioskClient = new KioskClient({
+  client,
+  network: Network.TESTNET,
+});
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
   process.env.OWNER_MNEMONIC_PHRASE as string
@@ -18,7 +25,7 @@ export async function CreateTransferPolicy() {
   const publisher = process.env.ASSET_PUBLISHER as string;
 
   const [policy, cap] = tx.moveCall({
-    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::setup_tp`,
+    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::proxy::setup_tp`,
     typeArguments: [
       `${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE`,
     ],
@@ -27,13 +34,12 @@ export async function CreateTransferPolicy() {
       tx.object(publisher),
     ],
   });
-  console.log("Cap", cap);
-  console.log("Policy", policy);
+
   tx.transferObjects([cap], address);
 
   tx.moveCall({
     target: `0x2::transfer::public_share_object`,
-    typeArguments: [`0x0000000000000000000000000000000000000000000000000000000000000002::transfer_policy::TransferPolicy<${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>>`],
+    typeArguments: [`0x0000000000000000000000000000000000000000000000000000000000000002::transfer_policy::TransferPolicy<${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>>`],
     arguments: [
       policy
     ],
@@ -50,6 +56,4 @@ export async function CreateTransferPolicy() {
   console.log("Status", result.effects?.status);
   console.log("Result", result);
 }
-
-CreateTransferPolicy();
   

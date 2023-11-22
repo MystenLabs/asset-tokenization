@@ -26,19 +26,19 @@ function getVecMapValues() {
 }
 
 
-export async function MintNFT() {
+export async function Mint() {
   const { keys, values } = getVecMapValues();
 
   const tx = new TransactionBlock();
 
   let tokenized_asset = tx.moveCall({
-    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::mint`,
+    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::mint`,
     typeArguments: [`${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE`],
     arguments: [
       tx.object(process.env.ASSET_CAP_ID as string),
       tx.pure(keys, "vector<string>"),
       tx.pure(values, "vector<string>"),
-      tx.pure(4)
+      tx.pure(3)
     ],
   });
 
@@ -55,12 +55,10 @@ export async function MintNFT() {
   console.log("Status", result.effects?.status);
   console.log("Result", result);
   
+  const created = result.effects?.created;
   const tokenized_asset_id = (result.effects?.created && result.effects?.created[0].reference.objectId) as string;
   console.log(tokenized_asset_id);
 
   return tokenized_asset_id
 }
-
-
-MintNFT()
 

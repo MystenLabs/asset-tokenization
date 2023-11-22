@@ -14,11 +14,18 @@ const kioskClient = new KioskClient({
 const owner_keypair = Ed25519Keypair.deriveKeypair(
   process.env.OWNER_MNEMONIC_PHRASE as string
 );
-const address = owner_keypair.toSuiAddress().toString();
+const owner_address = owner_keypair.toSuiAddress().toString();
+
+const buyer_keypair = Ed25519Keypair.deriveKeypair(
+  process.env.BUYER_MNEMONIC_PHRASE as string
+);
+
+const buyer_address = buyer_keypair.toSuiAddress().toString();
 
 export async function QueringKiosks() {
   const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({
-    address,
+    address: owner_address,
+    // address: buyer_address,
   });
   
   const nonPersonalKiosks = kioskOwnerCaps.filter(
@@ -27,8 +34,7 @@ export async function QueringKiosks() {
   const personalKiosks = kioskOwnerCaps.filter(
     (cap) => cap.isPersonal == true
   );
-  // console.log([personalKiosks, nonPersonalKiosks])
+  
+  console.log(kioskOwnerCaps);
   return [personalKiosks, nonPersonalKiosks];
 }
-
-QueringKiosks();

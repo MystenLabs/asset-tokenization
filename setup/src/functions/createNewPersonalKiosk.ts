@@ -17,21 +17,21 @@ const owner_keypair = Ed25519Keypair.deriveKeypair(
 );
 const address = owner_keypair.toSuiAddress().toString();
 
-export async function CreatingNewKiosk() {
+
+export async function CreateNewPersonalKiosk() {
   const tx = new TransactionBlock();
   const kioskTx = new KioskTransaction({ transactionBlock: tx, kioskClient });
 
   // Calls the creation function.
-  kioskTx.create();
-
-  // We can use the kiosk for some action.
-  // For example, placing an item in the newly created kiosk.
-
+  // kioskTx.createPersonal();
+  kioskTx
+    .createPersonal() // `true` allows us to reuse the kiosk in the same PTB. If we pass false, we can only call `kioskTx.finalize()`.
+    .finalize(); // finalize is always our last call.
   // Shares the kiosk and transfers the `KioskOwnerCap` to the owner.
-  kioskTx.shareAndTransferCap(address);
+  // kioskTx.shareAndTransferCap(address);
 
   // Always called as our last kioskTx interaction.
-  kioskTx.finalize();
+  // kioskTx.finalize();
 
   // Sign and execute transaction block.
   const result = await client.signAndExecuteTransactionBlock({
@@ -41,8 +41,7 @@ export async function CreatingNewKiosk() {
       showEffects: true,
     },
   });
+
   console.log("Execution status", result.effects?.status);
   console.log("Result", result.effects);
 }
-
-CreatingNewKiosk();

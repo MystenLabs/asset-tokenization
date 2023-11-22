@@ -18,7 +18,7 @@ const owner_keypair = Ed25519Keypair.deriveKeypair(
 
 const address = owner_keypair.getPublicKey().toSuiAddress();
 
-export async function Split() {
+export async function Split(tokenized_asset?: string) {
   const tx = new TransactionBlock();
 
   const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({ address });
@@ -32,8 +32,8 @@ export async function Split() {
       cap: kioskCap,
   });
   
-  const itemId = process.env.FT1 as string;
-  const itemType = `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`;
+  const itemId = tokenized_asset ?? process.env.TOKENIZED_ASSET as string;
+  const itemType = `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`;
   const [item, promise] = kioskTx.borrow({
       itemId,
       itemType,
@@ -41,7 +41,7 @@ export async function Split() {
 
   const value = 1;
   const new_tokenized_asset = tx.moveCall({
-      target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::split`,
+      target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::split`,
       typeArguments: [
           `${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE`
       ],
@@ -52,17 +52,17 @@ export async function Split() {
   });
 
   kioskTx.place({
-      itemType: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`,
+      itemType: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`,
       item: new_tokenized_asset
   });
 
   kioskTx
-.return({
-  itemType,
-  item,
-  promise,
-})
-.finalize();
+  .return({
+    itemType,
+    item,
+    promise,
+  })
+  .finalize();
 
   const result = await client.signAndExecuteTransactionBlock({
       transactionBlock: tx,
@@ -75,5 +75,3 @@ export async function Split() {
   console.log("Status", result.effects?.status);
   console.log("Result", result);
 }
-
-Split();

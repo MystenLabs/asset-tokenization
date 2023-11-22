@@ -1,8 +1,8 @@
 import { config } from "dotenv";
-import { TransactionBlock, TransactionObjectArgument } from "@mysten/sui.js/transactions";
+import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { KioskClient, KioskTransaction, Network } from "@mysten/kiosk";
+import { KioskClient, Network, KioskTransaction, KIOSK_MODULE, objArg } from "@mysten/kiosk";
 config({});
 
 const client = new SuiClient({ url: getFullnodeUrl("testnet") });
@@ -15,10 +15,9 @@ const kioskClient = new KioskClient({
 const owner_keypair = Ed25519Keypair.deriveKeypair(
   process.env.OWNER_MNEMONIC_PHRASE as string
 );
-
 const owner_address = owner_keypair.toSuiAddress().toString();
 
-export async function Burn() {
+export async function Join(ft1?: string, ft2?: string) {
   const tx = new TransactionBlock();
 
   const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({address:owner_address});
@@ -32,64 +31,74 @@ export async function Burn() {
     cap: kioskCap,
   });
 
-  const asset_cap = process.env.ASSET_CAP_ID as string;
   const protected_tp = process.env.PROTECTED_TP as string;
 
-  const itemType =  `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`;
-  const itemId = `${process.env.TOKENIZED_ASSET}`;
-  const sellerKiosk = `${process.env.SELLER_KIOSK}`;
+  const itemType =  `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`;
+  const itemXId = ft1 ?? process.env.FT1 as string;
+  const itemYId = ft2 ?? process.env.FT2 as string;
+  const sellerKiosk = targetKioskId;
+
+  const [itemX, promise] = kioskTx.borrow({
+    itemId: itemXId,
+    itemType,
+  });
 
   kioskTx.list({
-    itemId,
+        itemId: itemYId,
+        itemType,
+        price: '0',
+    })
+
+  const [itemY, transferRequest] = kioskTx.purchase({
     itemType,
-    price: '0',
+		itemId: itemYId,
+		price: '0',
+		sellerKiosk,
   })
 
-  const [item, transferRequest] = kioskTx.purchase({
-    itemType,
-    itemId,
-    price: '0',
-    sellerKiosk,
-  })
-
-  const burn_promise = tx.moveCall({
-    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::unlock_burn_ta`,
+  const join_promise = tx.moveCall({
+    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::unlock::asset_from_kiosk_to_join`,
     typeArguments: [
       `${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE`
     ],
     arguments: [
-      item,
-      tx.object(asset_cap),
+      itemX,
+      itemY,
       tx.object(protected_tp),
       transferRequest
     ],
   });
 
-
-  tx.moveCall({
-    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::burn`,
+  const burn_proof = tx.moveCall({
+    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::join`,
     typeArguments: [
       `${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE`
     ],
     arguments: [
-      tx.object(asset_cap),
-      item
+      itemX,
+      itemY
     ],
   });
 
   tx.moveCall({
-    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::prove_burn`,
+    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::unlock::prove_join`,
     typeArguments: [
       `${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE`
     ],
     arguments: [
-      tx.object(asset_cap),
-      burn_promise,
+      itemX,
+      join_promise,
+      burn_proof
     ],
   });
 
-  kioskTx.finalize();
-
+  kioskTx.return({
+    itemType,
+    item: itemX,
+    promise,
+  })
+  .finalize();
+  
   const result = await client.signAndExecuteTransactionBlock({
     transactionBlock: tx,
     signer: owner_keypair,
@@ -98,8 +107,10 @@ export async function Burn() {
     },
   });
 
+  const remaining_asset = result.effects?.mutated && result.effects?.mutated[4].reference.objectId as string;
   console.log("Status", result.effects?.status);
   console.log("Result", result);
-}
 
-Burn();
+  return remaining_asset;
+  
+}

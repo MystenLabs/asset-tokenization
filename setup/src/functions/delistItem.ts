@@ -17,9 +17,10 @@ const owner_keypair = Ed25519Keypair.deriveKeypair(
 );
 const address = owner_keypair.toSuiAddress().toString();
 
-const itemId = process.env.TOKENIZED_ASSET as string;
+export async function DelistItem(tokenized_asset?: string) {
+    const itemId = tokenized_asset ?? process.env.TOKENIZED_ASSET as string;
+    const itemType = `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`
 
-export async function TakeFromKiosk() {  
     const tx = new TransactionBlock();
     const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({ address });
     
@@ -31,20 +32,15 @@ export async function TakeFromKiosk() {
       kioskClient,
       cap: kioskCap,
     });
-    
-    // Take item from kiosk.
-    const item = kioskTx.take({
-      itemId,
-      itemType: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::core::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`,
-    });
-    
-    // Do something with `item`, like transfer it to someone else.
-    tx.transferObjects([item], address);
-    
-    // Finalize the kiosk Tx.
-    kioskTx.finalize();
-    
-    // Sign and execute transaction block.
+
+    kioskTx
+      .delist({
+          itemId,
+          itemType
+      })
+      .finalize();
+  
+  
     const result = await client.signAndExecuteTransactionBlock({
       transactionBlock: tx,
       signer: owner_keypair,
@@ -52,8 +48,7 @@ export async function TakeFromKiosk() {
         showEffects: true,
       },
     });
+    
     console.log("Execution status", result.effects?.status);
     console.log("Result", result.effects);
-  }
-
-  TakeFromKiosk();
+}

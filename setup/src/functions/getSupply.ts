@@ -13,7 +13,7 @@ type SupplyFields = {
     }
 }
 
-export async function Supply() {
+export async function GetSupply() {
   const tx = new TransactionBlock();
   const asset_cap_id = process.env.ASSET_CAP_ID as string;
 
@@ -24,8 +24,7 @@ export async function Supply() {
     }
   })
 
-  let supply = asset_cap.data?.content?.dataType == 'moveObject' && (asset_cap.data?.content.fields as SupplyFields).supply.fields.value;
+  const supply = asset_cap.data?.content?.dataType == 'moveObject' && (asset_cap.data?.content.fields as SupplyFields).supply.fields.value;
   console.log("Supply", supply)
+  return supply;
 }
-
-Supply();

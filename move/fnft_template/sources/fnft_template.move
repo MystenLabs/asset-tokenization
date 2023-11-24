@@ -6,7 +6,7 @@ module fnft_template::fnft_template {
     use std::option;
 
     // Sui imports
-    use asset_tokenization::core::{Self};
+    use asset_tokenization::tokenized_asset::{Self};
     use sui::tx_context::{Self, TxContext};
     use sui::transfer;
     use sui::url::{ Url };
@@ -14,11 +14,11 @@ module fnft_template::fnft_template {
     struct FNFT_TEMPLATE has drop {}
 
     const TOTAL_SUPPLY: u64 = 100;
-    const BURNABLE: bool = false; 
+    const BURNABLE: bool = true; 
 
 
     fun init (otw: FNFT_TEMPLATE, ctx: &mut TxContext){
-        let (asset_cap, asset_metadata) = core::new_asset(
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(
         otw, 
         TOTAL_SUPPLY, 
         ascii::string(b"Symbol"), 

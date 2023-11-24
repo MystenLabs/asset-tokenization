@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// This module unlocks a Tokenized Asset (TA) for the purposes of authorized burning
-/// and joining. It enables TA type creators to support the afformetioned operations by
+/// and joining. It enables TA type creators to support the aforementioned operations by
 /// unlocking Kiosk assets without fulfilling the default set
 /// of requirements (rules / policies).
 module asset_tokenization::unlock {
@@ -20,13 +20,18 @@ module asset_tokenization::unlock {
     const ENotPromisedItem: u64 = 4;
     const ENotBurnedItem: u64 = 5;
 
+    /// A promise object created to ensure that we are not trying 
+    /// to permanently unlock an object outside the scope of joining.
     struct JoinPromise {
+        /// the item where the balance of the TA we are burning will end up in.
         item: ID,
+        /// burned is the id of the TA that will be burned
         burned: ID,
+        /// the final balance we expect the item to have after the merge has happened
         expected_balance: u64
     }
 
-    ///
+    /// A promise object created to ensure that the object is permanently burned
     struct BurnPromise {
         expected_supply: u64
     }
@@ -63,7 +68,6 @@ module asset_tokenization::unlock {
             expected_balance
         }
     }
-
 
     /// A method to prove that the unlocked TA has been burned and its balance has been added inside an existing TA.
     public fun prove_join<T>(self: &TokenizedAsset<T>, promise: JoinPromise, proof: ID) {

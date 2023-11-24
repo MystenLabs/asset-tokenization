@@ -1,6 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+/// This module contains information relevant to asset tokenization (new, mint, split, join, burn)
 module asset_tokenization::tokenized_asset {
     // std lib imports
     use std::string::{String};
@@ -26,7 +27,6 @@ module asset_tokenization::tokenized_asset {
     const EInsufficientBalance: u64 = 6;
     const EBadWitness: u64 = 7;
 
-    /// ????
     struct AssetCap<phantom T> has key, store {
         id: UID,
         /// The current circulating supply
@@ -50,18 +50,17 @@ module asset_tokenization::tokenized_asset {
         icon_url: Option<Url>
     }
 
-    /// ???
     struct TokenizedAsset<phantom T> has key, store {
         id: UID,
-        /// ???
+        /// The balance of the tokenized asset
         balance: Balance<T>,
-        /// ???
+        /// If the VecMap is populated, it is considered an NFT, else the asset is considered an FT.
         metadata: VecMap<String, String>,
-        /// ???
+        /// URL for the asset image (optional)
         image_url: Option<Url>,
     }
 
-    /// ???
+    /// Capability that is issued to the one deploying the contract
     struct PlatformCap has key, store { id: UID }
 
     /// ???
@@ -184,8 +183,6 @@ module asset_tokenization::tokenized_asset {
         tokenized_asset: TokenizedAsset<T>
     ) {
         assert!(cap.burnable == true, ENonBurnable);
-        // cap.total_supply = cap.total_supply - balance_value;
-        // let balance_value = value(&tokenized_asset);
         let TokenizedAsset { id, balance, metadata: _, image_url: _} = tokenized_asset;
         balance::decrease_supply(&mut cap.supply, balance);
         object::delete(id);
@@ -228,7 +225,7 @@ module asset_tokenization::tokenized_asset {
         vec_map
     }
 
-    #[test_only] friend asset_tokenization::core_tests;
+    #[test_only] friend asset_tokenization::tests;
     #[test_only]
     public fun test_init(ctx: &mut TxContext) {
         init(ctx);

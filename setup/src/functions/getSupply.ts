@@ -25,6 +25,6 @@ export async function GetSupply() {
   })
 
   const supply = asset_cap.data?.content?.dataType == 'moveObject' && (asset_cap.data?.content.fields as SupplyFields).supply.fields.value;
-  console.log("Supply", supply)
+  console.log("Current Supply: ", supply)
   return supply;
 }

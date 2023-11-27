@@ -73,6 +73,9 @@ if (args.length === 0) {
     case 'create-personal-kiosk':
       index.CreateNewPersonalKiosk();
       break;
+    case 'e2e':
+      index.Main();
+      break;
     default:
       console.log(`Function '${functionName}' not found.`);
       break;

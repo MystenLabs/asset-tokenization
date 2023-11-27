@@ -51,4 +51,6 @@ export async function DelistItem(tokenized_asset?: string) {
     
     console.log("Execution status", result.effects?.status);
     console.log("Result", result.effects);
+    console.log("Delisted Item: ", itemId);
+    return itemId;
 }

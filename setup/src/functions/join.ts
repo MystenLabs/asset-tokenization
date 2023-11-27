@@ -107,10 +107,26 @@ export async function Join(ft1?: string, ft2?: string) {
     },
   });
 
-  const remaining_asset = result.effects?.mutated && result.effects?.mutated[4].reference.objectId as string;
   console.log("Status", result.effects?.status);
   console.log("Result", result);
 
-  return remaining_asset;
-  
+  const mutated_objects_length = result.effects?.mutated?.length as number;
+  let i = 0;
+  const target_type = `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`;
+  let target_object_id: string;
+  while (i < mutated_objects_length) {
+    target_object_id = (result.effects?.mutated && result.effects?.mutated[i].reference.objectId) as string
+    let target_object = await client.getObject({
+      id: target_object_id,
+      options: {
+        showType:true
+      }
+    })
+    let current_type = target_object.data?.type as string;
+    if (current_type == target_type) {
+      console.log("Remaining Asset: ", target_object_id);
+      return target_object_id;
+    }
+    i = i + 1;
+  }
 }

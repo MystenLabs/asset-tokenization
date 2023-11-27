@@ -99,5 +99,5 @@ export async function Burn(tokenized_asset?: string) {
 
   console.log("Status", result.effects?.status);
   console.log("Result", result);
-  return result.digest;
+  return itemId;
 }

@@ -23,6 +23,6 @@ export async function GetBalance(tokenized_asset?: string) {
   
     const tokenized_asset_balance = tokenized_asset_object.data?.content?.dataType == 'moveObject' && (tokenized_asset_object.data?.content.fields as TokenizedAssetFields).balance;
 
-    console.log("Tokenized Asset Balance:", tokenized_asset_balance)
+    console.log("Tokenized Asset Balance: ", tokenized_asset_balance)
     return tokenized_asset_balance;
 }

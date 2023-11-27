@@ -63,7 +63,9 @@ export async function ListItem(tokenized_asset?: string) {
     },
   });
   
+  const listing_df = (result.effects?.created && result.effects?.created[0].reference.objectId) as string
   console.log("Execution status", result.effects?.status);
   console.log("Result", result.effects);
-  return result.digest;
+  console.log("Listing Dynamic Field: ", listing_df);
+  return listing_df;
 }

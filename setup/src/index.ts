@@ -20,4 +20,5 @@ export * from "./functions/split";
 export * from "./functions/takeFromKiosk";
 export * from "./functions/mintAndLock";
 export * from "./functions/transferPolicyRules";
+export * from "./end2end";
 

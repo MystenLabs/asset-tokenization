@@ -22,6 +22,6 @@ export async function GetTotalSupply() {
     })
   
     let total_supply = asset_cap.data?.content?.dataType == 'moveObject' && (asset_cap.data?.content.fields as TotalSupplyFields).total_supply;
-    console.log("Total Supply", total_supply)
+    console.log("Total Supply: ", total_supply)
     return total_supply;
 }

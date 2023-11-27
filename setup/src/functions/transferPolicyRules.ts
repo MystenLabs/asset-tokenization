@@ -20,7 +20,6 @@ const address = owner_keypair.toSuiAddress().toString();
 export async function TransferPolicyRules(transfer_policy?: string) { 
     const tx = new TransactionBlock();
     const targetPolicy = transfer_policy ?? process.env.TRANSFER_POLICY;
-    console.log(targetPolicy);
     // You could have more than one cap, since we can create more than one transfer policy.
     const policyCaps = await kioskClient.getOwnedTransferPoliciesByType({
         type: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`,

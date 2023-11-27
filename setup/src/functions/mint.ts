@@ -55,9 +55,8 @@ export async function Mint() {
   console.log("Status", result.effects?.status);
   console.log("Result", result);
   
-  const created = result.effects?.created;
   const tokenized_asset_id = (result.effects?.created && result.effects?.created[0].reference.objectId) as string;
-  console.log(tokenized_asset_id);
+  console.log("Minted Tokenized Asset :", tokenized_asset_id);
 
   return tokenized_asset_id
 }

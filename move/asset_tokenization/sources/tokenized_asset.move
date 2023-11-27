@@ -1,7 +1,12 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-/// This module contains information relevant to asset tokenization (new, mint, split, join, burn)
+/// The `tokenized_asset` module will operate in a manner similar to the `coin` library. 
+/// When it receives a new one-time witness type, it will create a unique representation of
+/// a fractional asset.
+/// This module employs similar implementations to some methods found in the Coin module.
+/// It encompasses functionalities pertinent to asset tokenization,
+/// including new asset creation, minting, splitting, joining, and burning.
 module asset_tokenization::tokenized_asset {
     // std lib imports
     use std::string::{String};
@@ -27,6 +32,10 @@ module asset_tokenization::tokenized_asset {
     const EInsufficientBalance: u64 = 6;
     const EBadWitness: u64 = 7;
 
+    /// An AssetCap should be generated for each new Asset we wish to represent
+    /// as a fractional NFT. In most scenarios, it is recommended to be created as
+    /// an owned object, which can then be transferred to the platform's administrator
+    /// for access restricted method invocation.
     struct AssetCap<phantom T> has key, store {
         id: UID,
         /// The current circulating supply
@@ -38,6 +47,9 @@ module asset_tokenization::tokenized_asset {
 	    burnable: bool
     }
 
+    /// The AssetMetadata struct defines the metadata representing the entire asset.
+    /// that we intend to fractionalize. 
+    /// It is recommended to be a shared object.
     struct AssetMetadata<phantom T> has key, store {
         id: UID,
         /// Name of the asset
@@ -50,20 +62,22 @@ module asset_tokenization::tokenized_asset {
         icon_url: Option<Url>
     }
 
+    /// TokenizedAsset(TA) struct represents a tokenized asset of type T.
     struct TokenizedAsset<phantom T> has key, store {
         id: UID,
-        /// The balance of the tokenized asset
+        /// The balance of the tokenized asset.
         balance: Balance<T>,
         /// If the VecMap is populated, it is considered an NFT, else the asset is considered an FT.
         metadata: VecMap<String, String>,
-        /// URL for the asset image (optional)
+        /// URL for the asset image (optional).
         image_url: Option<Url>,
     }
 
-    /// Capability that is issued to the one deploying the contract
+    /// Capability that is issued to the one deploying the contract.
+    /// Allows access to the publisher.
     struct PlatformCap has key, store { id: UID }
 
-    /// ???
+    /// Event emitted when a new asset is created.
     struct AssetCreated has copy, drop {
         asset_metadata: ID,
         name: ascii::String
@@ -76,7 +90,7 @@ module asset_tokenization::tokenized_asset {
         }, tx_context::sender(ctx))
     }
 
-    /// Creates a new Asset representation
+    /// Creates a new Asset representation that can be fractionalized.
     public fun new_asset<T: drop>(
         witness: T,
         total_supply: u64,
@@ -113,7 +127,12 @@ module asset_tokenization::tokenized_asset {
         (asset_cap, asset_metadata)
     }
 
-    /// Mints a TA with the specified fields
+    /// Mints a TA with the specified fields.
+    /// If the VecMap of an asset is populated with values, indicating multiple unique entries,
+    /// it is considered a non-fungible token (NFT). 
+    /// Conversely, if the VecMap of an asset is not populated, 
+    /// indicating an absence of individual entries, 
+    /// it is considered a fungible token (FT).
     public fun mint<T>(
         cap: &mut AssetCap<T>,
         keys: vector<String>,
@@ -135,8 +154,8 @@ module asset_tokenization::tokenized_asset {
         }
     }
 
-    /// Split a tokenized_asset
-    /// Creates a new tokenized asset of balance split_amount and updates tokenized_asset's balance accordingly
+    /// Split a tokenized_asset.
+    /// Creates a new tokenized asset of balance split_amount and updates tokenized_asset's balance accordingly.
     /// If the asset is unique (NFT) it can not be split into a new TA.
     public fun split<T>(
         self: &mut TokenizedAsset<T>,
@@ -158,9 +177,10 @@ module asset_tokenization::tokenized_asset {
     }
 
 
-    /// Merge tokenized_asset2's balance into tokenized_asset1's balance
-    /// Tokenized_asset2 is burned
-    /// If the asset is unique (NFT) it can not be merged with other TAs of type T since they describe unique variations of the underlying asset T
+    /// Merge other's balance into self's balance.
+    /// other is burned.
+    /// If the asset is unique (NFT) it can not be merged with other TAs
+    /// of type T since they describe unique variations of the underlying asset T.
     public fun join<T>(
         self: &mut TokenizedAsset<T>,
         other: TokenizedAsset<T>
@@ -177,7 +197,7 @@ module asset_tokenization::tokenized_asset {
         item
     }
 
-    /// Destroy the tokenized asset and decrease the supply in `cap` accordingly
+    /// Destroy the tokenized asset and decrease the supply in `cap` accordingly.
     public fun burn<T>(
         cap: &mut AssetCap<T>,
         tokenized_asset: TokenizedAsset<T>
@@ -188,22 +208,22 @@ module asset_tokenization::tokenized_asset {
         object::delete(id);
     }
 
-    /// Returns the value of the total supply
+    /// Returns the value of the total supply.
     public fun total_supply<T>(cap: &AssetCap<T>): u64 {
         cap.total_supply
     }
 
-    /// Returns the value of the current circulating supply
+    /// Returns the value of the current circulating supply.
     public fun supply<T>(cap: &AssetCap<T>): u64 {
         balance::supply_value(&cap.supply)
     }
 
-    /// Returns the balance value of a TokenizedAsset<T>
+    /// Returns the balance value of a TokenizedAsset<T>.
     public fun value<T>(tokenized_asset: &TokenizedAsset<T>): u64 {
         balance::value(&tokenized_asset.balance)
     }
 
-    /// Internal helper function used to populate a VecMap<String, String>
+    /// Internal helper function used to populate a VecMap<String, String>.
     fun create_vec_map_from_arrays(
         keys: vector<String>,
         values: vector<String>
@@ -225,7 +245,6 @@ module asset_tokenization::tokenized_asset {
         vec_map
     }
 
-    #[test_only] friend asset_tokenization::tests;
     #[test_only]
     public fun test_init(ctx: &mut TxContext) {
         init(ctx);

@@ -1,7 +1,10 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-/// This module contains all the delegated actions. Like policy, registry and display creation.
+/// This module contains all the delegated actions. 
+/// Like policy, registry and display creation.
+/// This is required since the publisher of the tokenized_asset module
+/// will not be the same as the publisher of the tokenized asset type.
 module asset_tokenization::proxy {
 
     // Sui imports
@@ -19,19 +22,18 @@ module asset_tokenization::proxy {
 
     const ETypeNotFromPackage: u64 = 1;
 
-    /// OTW used to claim the publisher
+    /// OTW used to claim the publisher.
     struct PROXY has drop {}
 
-    /// A shared object used to hold the publisher object.
+    /// A shared object used to hold the publisher object
     /// and limit who accesses and creates Transfer Policies for Tokenized Assets. 
-    /// Only the actual Publisher should have mutable access to it.
     struct Registry has key {
         id: UID,
         publisher: Publisher
     }
 
     /// A shared object used to house the empty transfer policy.
-    /// Need to create one per type T created by a user.
+    /// Need to create one per type T of Tokenized Asset.
     struct ProtectedTP<phantom T> has key, store {
         id: UID,
         policy_cap: TransferPolicyCap<T>,
@@ -49,7 +51,8 @@ module asset_tokenization::proxy {
     }
 
     /// Uses the Publisher that is nested inside the registry along with the sender's Publisher
-    /// to create a Transfer Policy for the type TokenizedAsset<T>, where T is contained within the Publisher object.
+    /// to create a Transfer Policy for the type TokenizedAsset<T>,
+    /// where T matches with the Publisher object.
     public fun setup_tp<T: drop>(
         registry: &Registry,
         publisher: &Publisher,
@@ -63,7 +66,8 @@ module asset_tokenization::proxy {
     }
 
     /// Uses the Publisher that is nested inside the registry along with the sender's Publisher
-    /// to create and return an empty Display for the type TokenizedAsset<T>, where T is contained within the Publisher object.
+    /// to create and return an empty Display for the type TokenizedAsset<T>,
+    /// where T matches with the Publisher object.
     public fun new_display<T: drop>(
         registry: &Registry,
         publisher: &Publisher,
@@ -73,12 +77,12 @@ module asset_tokenization::proxy {
         display::new<TokenizedAsset<T>>(&registry.publisher, ctx)
     }
 
-    /// Returns the Transfer Policy for the type TokenizedAsset<T>
+    /// Returns the Transfer Policy for the type TokenizedAsset<T>.
     public(friend) fun transfer_policy<T>(protected_tp: &ProtectedTP<T>): &TransferPolicy<T> {
         &protected_tp.transfer_policy
     }
 
-    /// A way for the platform to access the publisher mutably
+    /// A way for the platform to access the publisher mutably.
     public fun publisher_mut(_: &PlatformCap, registry: &mut Registry): &mut Publisher {
         &mut registry.publisher
     }
@@ -86,7 +90,7 @@ module asset_tokenization::proxy {
     #[lint_allow(self_transfer)]
     /// Internal method that creates an empty TP and shares a ProtectedTP<T> object.
     /// This can be used to bypass the lock rule under specific conditions.
-    /// Invoked inside setup_tp()
+    /// Invoked inside setup_tp().
     fun create_protected_tp<T: drop>(registry: &Registry, ctx: &mut TxContext) {
         let (transfer_policy, cap) = transfer_policy::new<TokenizedAsset<T>>(&registry.publisher, ctx);
         // Storing inside the cap the ProtectedTP with no way to access it

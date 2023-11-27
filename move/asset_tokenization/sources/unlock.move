@@ -20,7 +20,7 @@ module asset_tokenization::unlock {
     const ENotPromisedItem: u64 = 4;
     const ENotBurnedItem: u64 = 5;
 
-    /// A promise object created to ensure that we are not trying 
+    /// A hot potato like, promise object created to ensure that we are not trying
     /// to permanently unlock an object outside the scope of joining.
     struct JoinPromise {
         /// the item where the balance of the TA we are burning will end up in.
@@ -31,18 +31,20 @@ module asset_tokenization::unlock {
         expected_balance: u64
     }
 
-    /// A promise object created to ensure that the object is permanently burned
+    /// A hot potato like, promise object created to ensure that the object is burned.
     struct BurnPromise {
         expected_supply: u64
     }
 
+    // Sample flow for joining:
     // Kiosk [ A, B ]
     // Merge: A <- B = A
     // Borrow A
     // Eject B: "B, TransferRequest<()>"
 
     /// A helper method that can be utilized to join kiosk locked TAs.
-    /// Assists in unlocking the TA with a promise that another TA of the same type will contain its balance at the end.
+    /// Assists in unlocking the TA with a promise that another
+    /// TA of the same type will contain its balance at the end.
     public fun asset_from_kiosk_to_join<T>(
         self: &TokenizedAsset<T>, // A
         to_burn: &TokenizedAsset<T>, // B
@@ -69,7 +71,8 @@ module asset_tokenization::unlock {
         }
     }
 
-    /// A method to prove that the unlocked TA has been burned and its balance has been added inside an existing TA.
+    /// A method to prove that the unlocked TA has been burned and
+    /// its balance has been added inside an existing TA.
     public fun prove_join<T>(self: &TokenizedAsset<T>, promise: JoinPromise, proof: ID) {
         let JoinPromise {item, burned, expected_balance} = promise;
         let balance = tokenized_asset::value(self);

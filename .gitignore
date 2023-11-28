@@ -6,3 +6,4 @@
 .coverage_map.mvcov
 .trace
 node_modules
+*.log

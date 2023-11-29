@@ -1,4 +1,9 @@
-# Simples instructions, to exapand.
+# WIP: Simple instructions
+
+## General preparation
+
+- Export locally in your terminal the `OWNER_MNEMONIC_PHRASE` variable and the `BUYER_MNEMONIC_PHRASE`.
+- Make sure your sui cli is using the same address as the `OWNER_MNEMONIC_PHRASE` variable.
 
 ## Publishing Asset Tokenization
 

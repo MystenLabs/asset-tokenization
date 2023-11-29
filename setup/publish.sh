@@ -55,7 +55,7 @@ PROTECTED_TP="Created by calling \`setup_tp\` function"
 TRANSFER_POLICY="Created by calling \`setup_tp\` function"
 
 OWNER_MNEMONIC_PHRASE=$OWNER_MNEMONIC_PHRASE
-BUYER_MNEMONIC_PHRASE="buyer's mnemonic"
+BUYER_MNEMONIC_PHRASE=$BUYER_MNEMONIC_PHRASE
 TARGET_KIOSK="kiosk id"
 BUYER_KIOSK="kiosk id"
 

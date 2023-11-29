@@ -41,7 +41,7 @@ export async function Join(ft1?: string, ft2?: string) {
 
   const protected_tp = process.env.PROTECTED_TP as string;
 
-  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`;
+  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
   const itemXId = ft1 ?? (process.env.FT1 as string);
   const itemYId = ft2 ?? (process.env.FT2 as string);
   const sellerKiosk = targetKioskId;
@@ -66,25 +66,19 @@ export async function Join(ft1?: string, ft2?: string) {
 
   const join_promise = tx.moveCall({
     target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::unlock::asset_from_kiosk_to_join`,
-    typeArguments: [
-      `${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE`,
-    ],
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [itemX, itemY, tx.object(protected_tp), transferRequest],
   });
 
   const burn_proof = tx.moveCall({
     target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::join`,
-    typeArguments: [
-      `${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE`,
-    ],
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [itemX, itemY],
   });
 
   tx.moveCall({
     target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::unlock::prove_join`,
-    typeArguments: [
-      `${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE`,
-    ],
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [itemX, join_promise, burn_proof],
   });
 
@@ -109,7 +103,7 @@ export async function Join(ft1?: string, ft2?: string) {
 
   const mutated_objects_length = result.effects?.mutated?.length as number;
   let i = 0;
-  const target_type = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`;
+  const target_type = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
   let target_object_id: string;
   while (i < mutated_objects_length) {
     target_object_id = (result.effects?.mutated &&

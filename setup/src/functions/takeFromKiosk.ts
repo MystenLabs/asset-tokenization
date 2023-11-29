@@ -34,7 +34,7 @@ export async function TakeFromKiosk(tokenized_asset?: string) {
 
   const item = kioskTx.take({
     itemId,
-    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`,
+    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`,
   });
 
   tx.transferObjects([item], address);

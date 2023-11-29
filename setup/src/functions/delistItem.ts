@@ -19,7 +19,7 @@ const address = owner_keypair.toSuiAddress().toString();
 
 export async function DelistItem(tokenized_asset?: string) {
   const itemId = tokenized_asset ?? (process.env.TOKENIZED_ASSET as string);
-  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`;
+  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
 
   const tx = new TransactionBlock();
   const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({ address });

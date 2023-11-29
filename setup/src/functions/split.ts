@@ -33,7 +33,7 @@ export async function Split(tokenized_asset?: string) {
   });
 
   const itemId = tokenized_asset ?? (process.env.TOKENIZED_ASSET as string);
-  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`;
+  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
   const [item, promise] = kioskTx.borrow({
     itemId,
     itemType,
@@ -42,14 +42,12 @@ export async function Split(tokenized_asset?: string) {
   const value = 1;
   const new_tokenized_asset = tx.moveCall({
     target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::split`,
-    typeArguments: [
-      `${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE`,
-    ],
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [item, tx.pure(value)],
   });
 
   kioskTx.place({
-    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`,
+    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`,
     item: new_tokenized_asset,
   });
 
@@ -74,7 +72,7 @@ export async function Split(tokenized_asset?: string) {
 
   const created_objects_length = result.effects?.created?.length as number;
   let i = 0;
-  const target_type = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`;
+  const target_type = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
   let target_object_id: string;
   while (i < created_objects_length) {
     target_object_id = (result.effects?.created &&

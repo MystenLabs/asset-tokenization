@@ -30,9 +30,7 @@ export async function CreateTransferPolicy() {
 
   const [policy, cap] = tx.moveCall({
     target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::proxy::setup_tp`,
-    typeArguments: [
-      `${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE`,
-    ],
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [tx.object(registry), tx.object(publisher)],
   });
 
@@ -41,7 +39,7 @@ export async function CreateTransferPolicy() {
   tx.moveCall({
     target: `0x2::transfer::public_share_object`,
     typeArguments: [
-      `0x0000000000000000000000000000000000000000000000000000000000000002::transfer_policy::TransferPolicy<${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>>`,
+      `0x0000000000000000000000000000000000000000000000000000000000000002::transfer_policy::TransferPolicy<${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>>`,
     ],
     arguments: [policy],
   });
@@ -59,7 +57,7 @@ export async function CreateTransferPolicy() {
 
   const created_objects_length = result.effects?.created?.length as number;
   let i = 0;
-  const target_type = `0x2::transfer_policy::TransferPolicy<${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>>`;
+  const target_type = `0x2::transfer_policy::TransferPolicy<${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>>`;
   let target_object_id: string;
   while (i < created_objects_length) {
     target_object_id = (result.effects?.created &&

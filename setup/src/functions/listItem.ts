@@ -27,7 +27,7 @@ const itemId = process.env.TOKENIZED_ASSET as string;
 
 export async function ListItem(tokenized_asset?: string) {
   const itemId = tokenized_asset ?? (process.env.TOKENIZED_ASSET as string);
-  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`;
+  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
 
   const tx = new TransactionBlock();
   const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({ address });

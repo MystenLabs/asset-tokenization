@@ -38,7 +38,7 @@ export async function LockItemInKiosk(minted_asset?: string) {
   const policyId = process.env.TRANSFER_POLICY as string;
 
   kioskTx.lock({
-    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`,
+    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`,
     itemId: item,
     policy: tx.object(policyId),
   });

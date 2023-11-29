@@ -34,7 +34,7 @@ export async function PurchaseItem(tokenized_asset?: string) {
   });
 
   const item = {
-    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`,
+    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`,
     itemId: tokenized_asset ?? (process.env.TOKENIZED_ASSET as string),
     price: "100000",
     sellerKiosk: `${process.env.TARGET_KIOSK}`,

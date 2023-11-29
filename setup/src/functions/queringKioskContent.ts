@@ -37,7 +37,7 @@ export async function QueringTargetContent(KioskID?: string) {
     let itemType = result.items[count].type;
     if (
       itemType ===
-      `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`
+      `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`
     ) {
       let target = result.items[count].kioskId;
       return target;

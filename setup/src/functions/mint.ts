@@ -31,9 +31,7 @@ export async function Mint() {
 
   let tokenized_asset = tx.moveCall({
     target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::mint`,
-    typeArguments: [
-      `${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE`,
-    ],
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [
       tx.object(process.env.ASSET_CAP_ID as string),
       tx.pure(keys, "vector<string>"),

@@ -40,7 +40,7 @@ export async function Burn(tokenized_asset?: string) {
   const asset_cap = process.env.ASSET_CAP_ID as string;
   const protected_tp = process.env.PROTECTED_TP as string;
 
-  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`;
+  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
   const itemId = tokenized_asset ?? (process.env.TOKENIZED_ASSET as string);
 
   kioskTx.list({
@@ -58,9 +58,7 @@ export async function Burn(tokenized_asset?: string) {
 
   const burn_promise = tx.moveCall({
     target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::unlock::asset_from_kiosk_to_burn`,
-    typeArguments: [
-      `${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE`,
-    ],
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [
       item,
       tx.object(asset_cap),
@@ -71,17 +69,13 @@ export async function Burn(tokenized_asset?: string) {
 
   tx.moveCall({
     target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::burn`,
-    typeArguments: [
-      `${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE`,
-    ],
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [tx.object(asset_cap), item],
   });
 
   tx.moveCall({
     target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::unlock::prove_burn`,
-    typeArguments: [
-      `${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE`,
-    ],
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [tx.object(asset_cap), burn_promise],
   });
 

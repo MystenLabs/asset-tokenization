@@ -27,7 +27,7 @@ export async function TransferPolicyRules(transfer_policy?: string) {
   const targetPolicy = transfer_policy ?? process.env.TRANSFER_POLICY;
   // You could have more than one cap, since we can create more than one transfer policy.
   const policyCaps = await kioskClient.getOwnedTransferPoliciesByType({
-    type: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::fnft_template::FNFT_TEMPLATE>`,
+    type: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`,
     address: address,
   });
 

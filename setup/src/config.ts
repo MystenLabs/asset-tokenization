@@ -9,7 +9,9 @@ export const packageId = process.env.PACKAGE_ID!;
 export const publisher = process.env.PUBLISHER_ID!;
 export const adminPhrase = process.env.ADMIN_PHRASE!;
 
-// console.log everything in the process.env object
 const keys = Object.keys(process.env);
 console.log("env contains ADMIN_ADDRESS:", keys.includes("ADMIN_ADDRESS"));
-console.log("env contains ADMIN_SECRET_KEY:", keys.includes("ADMIN_SECRET_KEY"));
+console.log(
+  "env contains ADMIN_SECRET_KEY:",
+  keys.includes("ADMIN_SECRET_KEY")
+);

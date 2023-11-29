@@ -30,7 +30,8 @@ module asset_tokenization::tokenized_asset {
     const ENonBurnable: u64 = 4;
     const EVecLengthMismatch: u64 = 5;
     const EInsufficientBalance: u64 = 6;
-    const EBadWitness: u64 = 7;
+    const EZeroBalance: u64 = 7;
+    const EBadWitness: u64 = 8;
 
     /// An AssetCap should be generated for each new Asset we wish to represent
     /// as a fractional NFT. In most scenarios, it is recommended to be created as
@@ -54,6 +55,9 @@ module asset_tokenization::tokenized_asset {
         id: UID,
         /// Name of the asset
         name: String,
+        /// The total max supply allowed to exist at any time that was issued
+        /// upon creation of Asset T
+        total_supply: u64,
         /// Symbol for the asset
         symbol: ascii::String,
         /// Description of the asset
@@ -114,6 +118,7 @@ module asset_tokenization::tokenized_asset {
         let asset_metadata = AssetMetadata {
             id: object::new(ctx),
             name,
+            total_supply,
             symbol,
             description,
             icon_url
@@ -165,6 +170,7 @@ module asset_tokenization::tokenized_asset {
         assert!(vec_map::is_empty(&self.metadata), EUniqueAsset);
         let balance_value = value(self);
         assert!(balance_value > 1 && split_amount < balance_value, EInsufficientBalance);
+        assert!(split_amount > 0, EZeroBalance);
 
         let new_balance = balance::split(&mut self.balance, split_amount);
 

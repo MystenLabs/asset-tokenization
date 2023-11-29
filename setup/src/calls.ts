@@ -7,73 +7,73 @@ if (args.length === 0) {
 } else {
   const functionName = args[0];
   switch (functionName) {
-    case 'create-tp':
+    case "create-tp":
       index.CreateTransferPolicy();
       break;
-    case 'tp-rules':
+    case "tp-rules":
       index.TransferPolicyRules();
       break;
-    case 'mint':
+    case "mint":
       index.Mint();
       break;
-    case 'quering-kiosk':
+    case "quering-kiosk":
       index.QueringKiosks();
       break;
-    case 'quering-kiosk-content':
+    case "quering-kiosk-content":
       index.QueringKioskContent();
       break;
-    case 'select-kiosk':
+    case "select-kiosk":
       index.ForcePersonalKiosk();
       break;
-    case 'lock':
+    case "lock":
       index.LockItemInKiosk();
       break;
-    case 'place':
+    case "place":
       index.PlaceItemInKiosk();
       break;
-    case 'take-from-kiosk':
+    case "take-from-kiosk":
       index.TakeFromKiosk();
       break;
-    case 'mint-lock':
+    case "mint-lock":
       index.mintAndLock();
       break;
-    case 'get-balance':
+    case "get-balance":
       index.GetBalance();
       break;
-    case 'get-supply':
+    case "get-supply":
       index.GetSupply();
       break;
-    case 'get-total-supply':
+    case "get-total-supply":
       index.GetTotalSupply();
       break;
-    case 'split':
+    case "split":
       index.Split();
       break;
-    case 'list':
+    case "list":
       index.ListItem();
       break;
-    case 'delist':
+    case "delist":
       index.DelistItem();
       break;
-    case 'purchase':
+    case "purchase":
       index.PurchaseItem();
       break;
-    case 'join':
+    case "join":
       index.Join();
       break;
-    case 'burn':
+    case "burn":
       index.Burn();
       break;
-    case 'convert-to-personal':
+    case "convert-to-personal":
       index.ConvertKioskToPersonal();
       break;
-    case 'create-kiosk':
+    case "create-kiosk":
       index.CreateNewKiosk();
       break;
-    case 'create-personal-kiosk':
+    case "create-personal-kiosk":
       index.CreateNewPersonalKiosk();
       break;
-    case 'e2e':
+    case "e2e":
       index.Main();
       break;
     default:

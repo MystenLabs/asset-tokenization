@@ -73,7 +73,12 @@ const publishNewAsset = async (
     .catch((e) => console.error(e)! || null);
 
   if (txRes?.effects?.status.status === "success") {
-    console.log("New asset published!", JSON.stringify(txRes, null, 2));
+    // console.log("New asset published!", JSON.stringify(txRes, null, 2));
+    console.log("New asset published! Digest:", txRes.digest);
+    const packageId = txRes.effects.created?.find(
+      (item) => item.owner === "Immutable"
+    )?.reference.objectId;
+    console.log("Package ID:", packageId);
   } else {
     console.log("Error: ", txRes?.effects?.status);
     throw new Error("Publishing failed");
@@ -83,9 +88,9 @@ const publishNewAsset = async (
 publishNewAsset(
   "magical_asset",
   "200",
-  "new_symbol",
-  "new_name",
-  "new_description",
+  "MA",
+  "Magical Asset",
+  "A magical Asset that can be used for magical things!",
   "new-icon_url",
   "false"
 );

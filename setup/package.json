@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "publish": "./publish.sh",
+    "publish-asset-tokenization": "./publish.sh testnet",
     "mbf": "pnpm --filter ./move-binary-format",
-    "publish-ts": "src/publish.ts",
+    "publish-template": "ts-node ./src/publishAsset.ts",
     "call": "tsc && node dist/calls.js"
   },
   "author": "",

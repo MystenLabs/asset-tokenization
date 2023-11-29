@@ -17,40 +17,39 @@ const owner_keypair = Ed25519Keypair.deriveKeypair(
 );
 const address = owner_keypair.toSuiAddress().toString();
 
+export async function TakeFromKiosk(tokenized_asset?: string) {
+  const itemId = tokenized_asset ?? (process.env.TOKENIZED_ASSET as string);
 
-export async function TakeFromKiosk(tokenized_asset?: string) {  
-    const itemId = tokenized_asset ?? process.env.TOKENIZED_ASSET as string;
-    
-    const tx = new TransactionBlock();
-    const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({ address });
-    
-    const targetKioskId = process.env.TARGET_KIOSK as string;
-  
-    const kioskCap = kioskOwnerCaps.find((cap) => cap.kioskId === targetKioskId)
-    const kioskTx = new KioskTransaction({
-      transactionBlock: tx,
-      kioskClient,
-      cap: kioskCap,
-    });
-    
-    const item = kioskTx.take({
-      itemId,
-      itemType: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`,
-    });
-    
-    tx.transferObjects([item], address);
-    
-    kioskTx.finalize();
-    
-    // Sign and execute transaction block.
-    const result = await client.signAndExecuteTransactionBlock({
-      transactionBlock: tx,
-      signer: owner_keypair,
-      options: {
-        showEffects: true,
-      },
-    });
-    
-    console.log("Execution status", result.effects?.status);
-    console.log("Result", result.effects);
-  }
+  const tx = new TransactionBlock();
+  const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({ address });
+
+  const targetKioskId = process.env.TARGET_KIOSK as string;
+
+  const kioskCap = kioskOwnerCaps.find((cap) => cap.kioskId === targetKioskId);
+  const kioskTx = new KioskTransaction({
+    transactionBlock: tx,
+    kioskClient,
+    cap: kioskCap,
+  });
+
+  const item = kioskTx.take({
+    itemId,
+    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`,
+  });
+
+  tx.transferObjects([item], address);
+
+  kioskTx.finalize();
+
+  // Sign and execute transaction block.
+  const result = await client.signAndExecuteTransactionBlock({
+    transactionBlock: tx,
+    signer: owner_keypair,
+    options: {
+      showEffects: true,
+    },
+  });
+
+  console.log("Execution status", result.effects?.status);
+  console.log("Result", result.effects);
+}

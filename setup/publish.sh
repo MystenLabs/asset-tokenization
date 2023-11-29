@@ -24,7 +24,7 @@ if [ $# -ne 0 ]; then
   fi
 fi
 
-publish_res=$(sui client publish --gas-budget 200000000 --json ../move/asset-tokenization --skip-dependency-verification)
+publish_res=$(sui client publish --gas-budget 200000000 --json ../move/asset_tokenization)
 
 echo ${publish_res} >.publish.res.json
 
@@ -36,24 +36,33 @@ fi
 echo "Contract Deployment finished!"
 
 echo "Setting up environmental variables..."
-PACKAGE_ID=$(echo "${publish_res}" | jq -r '.effects.created[] | select(.owner == "Immutable").reference.objectId')
+ASSET_TOKENIZATION_PACKAGE_ID=$(echo "${publish_res}" | jq -r '.effects.created[] | select(.owner == "Immutable").reference.objectId')
 newObjs=$(echo "$publish_res" | jq -r '.objectChanges[] | select(.type == "created")')
-PUBLISHER_ID=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::Publisher")).objectId')
 UPGRADE_CAP_ID=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::package::UpgradeCap")).objectId')
-
+REGISTRY=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::proxy::Registry")).objectId')
 
 cat >.env <<-ENV
-PACKAGE_ID=$PACKAGE_ID
-PUBLISHER_ID=$PUBLISHER_ID
 SUI_NETWORK=$NETWORK
-ADMIN_PHRASE=$ADMIN_PHRASE
-ADMIN_ADDRESS=$ADMIN_ADDRESS
-ADMIN_SECRET_KEY=$ADMIN_SECRET_KEY
+ASSET_TOKENIZATION_PACKAGE_ID=$ASSET_TOKENIZATION_PACKAGE_ID
+REGISTRY=$REGISTRY
+
+TEMPLATE_PACKAGE_ID="Created by publishing \`template\` package"
+ASSET_CAP_ID="Created by publishing \`template\` package"
+ASSET_METADATA_ID="Created by publishing \`template\` package"
+ASSET_PUBLISHER="Created by publishing \`template\` package"
+
+PROTECTED_TP="Created by calling \`setup_tp\` function"
+TRANSFER_POLICY="Created by calling \`setup_tp\` function"
+
+OWNER_MNEMONIC_PHRASE=$OWNER_MNEMONIC_PHRASE
+BUYER_MNEMONIC_PHRASE=$BUYER_MNEMONIC_PHRASE
+TARGET_KIOSK="kiosk id"
+BUYER_KIOSK="kiosk id"
+
+TOKENIZED_ASSET="tokenized asset id (created by minting)"
+FT1="tokenized asset id (to be joined)"
+FT2="tokenized asset id (to be joined)"
 ENV
 
-echo "Waiting for Fullnode to sync..."
-sleep 5
-
 echo "Installing dependencies..."
-
 npm install

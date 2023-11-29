@@ -18,18 +18,16 @@ export async function QueringKioskContent(KioskID?: string) {
   const res = await kioskClient.getKiosk({
     id: targetKioskId,
     options: {
-        withKioskFields: true, // this flag also returns the `kiosk` object in the response, which includes the base setup
-        withListingPrices: true, // This flag enables / disables the fetching of the listing prices.
-    }
+      withKioskFields: true, // this flag also returns the `kiosk` object in the response, which includes the base setup
+      withListingPrices: true, // This flag enables / disables the fetching of the listing prices.
+    },
   });
 
   console.log(res.items);
   return res;
 }
 
-
 export async function QueringTargetContent(KioskID?: string) {
-
   const targetKioskId = KioskID ?? (process.env.TARGET_KIOSK as string);
 
   let result = await QueringKioskContent(targetKioskId);
@@ -37,12 +35,15 @@ export async function QueringTargetContent(KioskID?: string) {
   let count = 0;
   while (count < result.items.length) {
     let itemType = result.items[count].type;
-    if (itemType ===  `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`){
+    if (
+      itemType ===
+      `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`
+    ) {
       let target = result.items[count].kioskId;
       return target;
     }
     count = count + 1;
-  };
+  }
 
   return;
 }

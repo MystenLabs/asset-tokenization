@@ -25,34 +25,30 @@ const buyer_address = buyer_keypair.toSuiAddress().toString();
 
 const itemId = process.env.TOKENIZED_ASSET as string;
 
-
-
 export async function ListItem(tokenized_asset?: string) {
-  const itemId = tokenized_asset ?? process.env.TOKENIZED_ASSET as string;
-  const itemType = `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::TokenizedAsset<${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE>`
+  const itemId = tokenized_asset ?? (process.env.TOKENIZED_ASSET as string);
+  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
 
   const tx = new TransactionBlock();
   const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({ address });
-  
+
   const targetKioskId = process.env.TARGET_KIOSK as string;
 
-  const kioskCap = kioskOwnerCaps.find((cap) => cap.kioskId === targetKioskId)
+  const kioskCap = kioskOwnerCaps.find((cap) => cap.kioskId === targetKioskId);
   const kioskTx = new KioskTransaction({
     transactionBlock: tx,
     kioskClient,
     cap: kioskCap,
   });
 
-
-  const SALE_PRICE = '100000'; 
+  const SALE_PRICE = "100000";
   kioskTx
     .list({
-        itemId,
-        itemType,
-        price: SALE_PRICE,
+      itemId,
+      itemType,
+      price: SALE_PRICE,
     })
     .finalize();
-
 
   const result = await client.signAndExecuteTransactionBlock({
     transactionBlock: tx,
@@ -62,8 +58,9 @@ export async function ListItem(tokenized_asset?: string) {
       showEffects: true,
     },
   });
-  
-  const listing_df = (result.effects?.created && result.effects?.created[0].reference.objectId) as string
+
+  const listing_df = (result.effects?.created &&
+    result.effects?.created[0].reference.objectId) as string;
   console.log("Execution status", result.effects?.status);
   console.log("Result", result.effects);
   console.log("Listing Dynamic Field: ", listing_df);

@@ -11,7 +11,6 @@ const owner_keypair = Ed25519Keypair.deriveKeypair(
   process.env.OWNER_MNEMONIC_PHRASE as string
 );
 
-
 function getVecMapValues() {
   // const keys = [
   //   "Piece",
@@ -19,12 +18,11 @@ function getVecMapValues() {
   //   "In a scale from 1 to 10, how good?",
   // ];
   // const values = ["8/100", "Yes", "11"];
-  const keys : string[] = [];
-  const values : string[] = [];
+  const keys: string[] = [];
+  const values: string[] = [];
 
   return { keys, values };
 }
-
 
 export async function Mint() {
   const { keys, values } = getVecMapValues();
@@ -32,18 +30,21 @@ export async function Mint() {
   const tx = new TransactionBlock();
 
   let tokenized_asset = tx.moveCall({
-    target: `${process.env.PACKAGE_ID_ASSET_TOKENIZATION}::tokenized_asset::mint`,
-    typeArguments: [`${process.env.PACKAGE_ID_FNFT_TEMPLATE}::fnft_template::FNFT_TEMPLATE`],
+    target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::mint`,
+    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
     arguments: [
       tx.object(process.env.ASSET_CAP_ID as string),
       tx.pure(keys, "vector<string>"),
       tx.pure(values, "vector<string>"),
-      tx.pure(3)
+      tx.pure(3),
     ],
   });
 
-  tx.transferObjects([tokenized_asset], owner_keypair.getPublicKey().toSuiAddress());
-  
+  tx.transferObjects(
+    [tokenized_asset],
+    owner_keypair.getPublicKey().toSuiAddress()
+  );
+
   const result = await client.signAndExecuteTransactionBlock({
     transactionBlock: tx,
     signer: owner_keypair,
@@ -54,10 +55,10 @@ export async function Mint() {
 
   console.log("Status", result.effects?.status);
   console.log("Result", result);
-  
-  const tokenized_asset_id = (result.effects?.created && result.effects?.created[0].reference.objectId) as string;
+
+  const tokenized_asset_id = (result.effects?.created &&
+    result.effects?.created[0].reference.objectId) as string;
   console.log("Minted Tokenized Asset :", tokenized_asset_id);
 
-  return tokenized_asset_id
+  return tokenized_asset_id;
 }
-

@@ -24,7 +24,7 @@ if [ $# -ne 0 ]; then
   fi
 fi
 
-publish_res=$(sui client publish --gas-budget 200000000 --json ../move/asset-tokenization --skip-dependency-verification)
+publish_res=$(sui client publish --gas-budget 200000000 --json ../move/asset_tokenization)
 
 echo ${publish_res} >.publish.res.json
 

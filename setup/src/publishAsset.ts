@@ -1,14 +1,15 @@
-import { normalizeSuiObjectId } from '@mysten/sui.js/utils';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { normalizeSuiObjectId } from "@mysten/sui.js/utils";
+import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { fromHEX } from "@mysten/bcs";
 import { packageId, SUI_NETWORK } from "./config";
-import { SuiClient } from '@mysten/sui.js/client';
+import { SuiClient } from "@mysten/sui.js/client";
 import { getSigner } from "./helpers";
 import { CompiledModule, getBytecode } from "./utils/bytecode-template";
 import init, * as wasm from "move-binary-format-wasm";
+import { bytecode as genesis_bytecode } from "./utils/genesis_bytecode";
 
 const client = new SuiClient({
-  url: SUI_NETWORK
+  url: SUI_NETWORK,
 });
 
 const publishNewAsset = async (
@@ -43,7 +44,7 @@ const publishNewAsset = async (
   const tx = new TransactionBlock();
   tx.setGasBudget(100000000);
   const [upgradeCap] = tx.publish({
-    modules: [[...fromHEX(bytesToPublish)]],
+    modules: [[...fromHEX(bytesToPublish)], [...fromHEX(genesis_bytecode)]],
     dependencies: [
       normalizeSuiObjectId("0x1"),
       normalizeSuiObjectId("0x2"),
@@ -51,26 +52,31 @@ const publishNewAsset = async (
     ],
   });
 
-  tx.transferObjects([upgradeCap], tx.pure(signer.getPublicKey().toSuiAddress(), "address"));
-  
-  const txRes = await client.signAndExecuteTransactionBlock({
-    transactionBlock: tx,
-    signer,
-    requestType: "WaitForLocalExecution",
-    options: {
-      showEvents: true,
-      showEffects: true,
-      showObjectChanges: true,
-      showBalanceChanges: true,
-      showInput: true,
-    }
-  }).catch((e) => console.error(e)! || null);
+  tx.transferObjects(
+    [upgradeCap],
+    tx.pure(signer.getPublicKey().toSuiAddress(), "address")
+  );
+
+  const txRes = await client
+    .signAndExecuteTransactionBlock({
+      transactionBlock: tx,
+      signer,
+      requestType: "WaitForLocalExecution",
+      options: {
+        showEvents: true,
+        showEffects: true,
+        showObjectChanges: true,
+        showBalanceChanges: true,
+        showInput: true,
+      },
+    })
+    .catch((e) => console.error(e)! || null);
 
   if (txRes?.effects?.status.status === "success") {
-    console.log('New asset published!', JSON.stringify(txRes, null, 2));
+    console.log("New asset published!", JSON.stringify(txRes, null, 2));
   } else {
     console.log("Error: ", txRes?.effects?.status);
-    throw new Error('Publishing failed');
+    throw new Error("Publishing failed");
   }
 };
 

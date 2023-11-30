@@ -1,14 +1,14 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
+import { SuiClient } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { KioskClient, Network, KioskTransaction } from "@mysten/kiosk";
-import { adminPhrase, buyerPhrase, tokenizedAssetID, tokenizedAssetType, assetTokenizationPackageId, targetKioskId } from "../config";
+import { KioskClient, KioskTransaction } from "@mysten/kiosk";
+import { SUI_NETWORK, KIOSK_NETWORK, adminPhrase, buyerPhrase, tokenizedAssetID, tokenizedAssetType, assetTokenizationPackageId, targetKioskId } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 const kioskClient = new KioskClient({
   client,
-  network: Network.TESTNET,
+  network: KIOSK_NETWORK,
 });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(

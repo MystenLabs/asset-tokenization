@@ -1,9 +1,9 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
+import { SuiClient } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { otw, assetTokenizationPackageId, adminPhrase, assetCap } from "../config";
+import { SUI_NETWORK, assetOTW, assetTokenizationPackageId, adminPhrase, assetCap } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
   adminPhrase
@@ -29,7 +29,7 @@ export async function Mint() {
 
   let tokenized_asset = tx.moveCall({
     target: `${assetTokenizationPackageId}::tokenized_asset::mint`,
-    typeArguments: [otw],
+    typeArguments: [assetOTW],
     arguments: [
       tx.object(assetCap),
       tx.pure(keys, "vector<string>"),

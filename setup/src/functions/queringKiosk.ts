@@ -1,13 +1,13 @@
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
+import { SuiClient } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { KioskClient, Network } from "@mysten/kiosk";
-import { adminPhrase, buyerPhrase } from "../config";
+import { KioskClient } from "@mysten/kiosk";
+import { SUI_NETWORK, KIOSK_NETWORK, adminPhrase, buyerPhrase } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 const kioskClient = new KioskClient({
   client,
-  network: Network.TESTNET,
+  network: KIOSK_NETWORK,
 });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(

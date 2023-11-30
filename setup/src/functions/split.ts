@@ -1,14 +1,14 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
+import { SuiClient } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { Network, KioskClient, KioskTransaction } from "@mysten/kiosk";
-import { adminPhrase, targetKioskId, tokenizedAssetID, tokenizedAssetType, assetTokenizationPackageId, otw } from "../config";
+import { KioskClient, KioskTransaction } from "@mysten/kiosk";
+import { SUI_NETWORK, KIOSK_NETWORK, adminPhrase, targetKioskId, tokenizedAssetID, tokenizedAssetType, assetTokenizationPackageId, assetOTW } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 const kioskClient = new KioskClient({
   client,
-  network: Network.TESTNET,
+  network: KIOSK_NETWORK,
 });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
@@ -39,7 +39,7 @@ export async function Split(tokenized_asset?: string) {
   const value = 1;
   const new_tokenized_asset = tx.moveCall({
     target: `${assetTokenizationPackageId}::tokenized_asset::split`,
-    typeArguments: [otw],
+    typeArguments: [assetOTW],
     arguments: [item, tx.pure(value)],
   });
 

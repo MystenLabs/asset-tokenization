@@ -1,8 +1,8 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
-import { tokenizedAssetID } from "../config";
+import { SuiClient } from "@mysten/sui.js/client";
+import { SUI_NETWORK, tokenizedAssetID } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 type TokenizedAssetFields = {
   balance: number

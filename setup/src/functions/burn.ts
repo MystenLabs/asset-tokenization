@@ -1,14 +1,14 @@
 import {TransactionBlock} from "@mysten/sui.js/transactions";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
+import { SuiClient } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { KioskClient, KioskTransaction, Network } from "@mysten/kiosk";
-import { assetCap, adminPhrase, tokenized_asset_type, otw, assetTokenizationPackageId, protectedTP, tokenizedAssetID, targetKioskId } from "../config";
+import { KioskClient, KioskTransaction } from "@mysten/kiosk";
+import { SUI_NETWORK, KIOSK_NETWORK, assetCap, adminPhrase, tokenizedAssetType, assetOTW, assetTokenizationPackageId, protectedTP, tokenizedAssetID, targetKioskId } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 const kioskClient = new KioskClient({
   client,
-  network: Network.TESTNET,
+  network: KIOSK_NETWORK,
 });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
@@ -31,7 +31,7 @@ export async function Burn(tokenized_asset?: string) {
     cap: kioskCap,
   });
 
-  const itemType = tokenized_asset_type;
+  const itemType = tokenizedAssetType;
   const itemId = tokenized_asset ?? tokenizedAssetID;
 
   kioskTx.list({
@@ -49,7 +49,7 @@ export async function Burn(tokenized_asset?: string) {
 
   const burn_promise = tx.moveCall({
     target: `${assetTokenizationPackageId}::unlock::asset_from_kiosk_to_burn`,
-    typeArguments: [otw],
+    typeArguments: [assetOTW],
     arguments: [
       item,
       tx.object(assetCap),
@@ -60,13 +60,13 @@ export async function Burn(tokenized_asset?: string) {
 
   tx.moveCall({
     target: `${assetTokenizationPackageId}::tokenized_asset::burn`,
-    typeArguments: [otw],
+    typeArguments: [assetOTW],
     arguments: [tx.object(assetCap), item],
   });
 
   tx.moveCall({
     target: `${assetTokenizationPackageId}::unlock::prove_burn`,
-    typeArguments: [otw],
+    typeArguments: [assetOTW],
     arguments: [tx.object(assetCap), burn_promise],
   });
 

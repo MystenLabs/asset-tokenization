@@ -1,12 +1,12 @@
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
-import { KioskClient, Network } from "@mysten/kiosk";
-import { targetKioskId, tokenizedAssetType } from "../config";
+import { SuiClient } from "@mysten/sui.js/client";
+import { KioskClient } from "@mysten/kiosk";
+import { SUI_NETWORK, KIOSK_NETWORK, targetKioskId, tokenizedAssetType } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 const kioskClient = new KioskClient({
   client,
-  network: Network.TESTNET,
+  network: KIOSK_NETWORK,
 });
 
 export async function QueringKioskContent(KioskID?: string) {

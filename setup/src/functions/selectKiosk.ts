@@ -1,12 +1,7 @@
-import { config } from "dotenv";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
 import { QueringKiosks } from "./queringKiosk";
 import { CreateNewPersonalKiosk } from "./createNewPersonalKiosk";
 import { ConvertKioskToPersonal } from "./convertKioskToPersonal";
 import { QueringTargetContent } from "./queringKioskContent";
-config({});
-
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
 export async function ForcePersonalKiosk() {
     const [personalKiosks, nonPersonalKiosks] = await QueringKiosks();

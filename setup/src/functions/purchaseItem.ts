@@ -1,9 +1,8 @@
-import { config } from "dotenv";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { KioskClient, Network, KioskTransaction } from "@mysten/kiosk";
-config({});
+import { targetKioskId, buyerPhrase, buyerKioskId, tokenizedAssetType, tokenizedAssetID } from "../config";
 
 const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
@@ -13,7 +12,7 @@ const kioskClient = new KioskClient({
 });
 
 const buyer_keypair = Ed25519Keypair.deriveKeypair(
-  process.env.BUYER_MNEMONIC_PHRASE as string
+  buyerPhrase
 );
 
 const buyer_address = buyer_keypair.toSuiAddress().toString();
@@ -24,8 +23,6 @@ export async function PurchaseItem(tokenized_asset?: string) {
     address: buyer_address,
   });
 
-  const buyerKioskId = process.env.BUYER_KIOSK as string;
-
   const kioskCap = kioskOwnerCaps.find((cap) => cap.kioskId === buyerKioskId);
   const kioskTx = new KioskTransaction({
     transactionBlock: tx,
@@ -34,10 +31,10 @@ export async function PurchaseItem(tokenized_asset?: string) {
   });
 
   const item = {
-    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`,
-    itemId: tokenized_asset ?? (process.env.TOKENIZED_ASSET as string),
+    itemType: tokenizedAssetType,
+    itemId: tokenized_asset ?? tokenizedAssetID,
     price: "100000",
-    sellerKiosk: `${process.env.TARGET_KIOSK}`,
+    sellerKiosk: targetKioskId,
   };
 
   await kioskTx.purchaseAndResolve({

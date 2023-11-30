@@ -1,15 +1,12 @@
-import { config } from "dotenv";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import {
   KioskClient,
   Network,
-  KioskTransaction,
-  KIOSK_MODULE,
-  objArg,
+  KioskTransaction
 } from "@mysten/kiosk";
-config({});
+import { adminPhrase, targetKioskId, protectedTP, assetTokenizationPackageId, tokenizedAssetType, otw, FT1, FT2 } from "../config";
 
 const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
@@ -19,7 +16,7 @@ const kioskClient = new KioskClient({
 });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
-  process.env.OWNER_MNEMONIC_PHRASE as string
+  adminPhrase
 );
 const owner_address = owner_keypair.toSuiAddress().toString();
 
@@ -30,8 +27,6 @@ export async function Join(ft1?: string, ft2?: string) {
     address: owner_address,
   });
 
-  const targetKioskId = process.env.TARGET_KIOSK as string;
-
   const kioskCap = kioskOwnerCaps.find((cap) => cap.kioskId === targetKioskId);
   const kioskTx = new KioskTransaction({
     transactionBlock: tx,
@@ -39,11 +34,9 @@ export async function Join(ft1?: string, ft2?: string) {
     cap: kioskCap,
   });
 
-  const protected_tp = process.env.PROTECTED_TP as string;
-
-  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
-  const itemXId = ft1 ?? (process.env.FT1 as string);
-  const itemYId = ft2 ?? (process.env.FT2 as string);
+  const itemType = tokenizedAssetType;
+  const itemXId = ft1 ?? FT1;
+  const itemYId = ft2 ?? FT2;
   const sellerKiosk = targetKioskId;
 
   const [itemX, promise] = kioskTx.borrow({
@@ -65,20 +58,20 @@ export async function Join(ft1?: string, ft2?: string) {
   });
 
   const join_promise = tx.moveCall({
-    target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::unlock::asset_from_kiosk_to_join`,
-    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
-    arguments: [itemX, itemY, tx.object(protected_tp), transferRequest],
+    target: `${assetTokenizationPackageId}::unlock::asset_from_kiosk_to_join`,
+    typeArguments: [otw],
+    arguments: [itemX, itemY, tx.object(protectedTP), transferRequest],
   });
 
   const burn_proof = tx.moveCall({
-    target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::join`,
-    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
+    target: `${assetTokenizationPackageId}::tokenized_asset::join`,
+    typeArguments: [otw],
     arguments: [itemX, itemY],
   });
 
   tx.moveCall({
-    target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::unlock::prove_join`,
-    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
+    target: `${assetTokenizationPackageId}::unlock::prove_join`,
+    typeArguments: [otw],
     arguments: [itemX, join_promise, burn_proof],
   });
 
@@ -103,7 +96,6 @@ export async function Join(ft1?: string, ft2?: string) {
 
   const mutated_objects_length = result.effects?.mutated?.length as number;
   let i = 0;
-  const target_type = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
   let target_object_id: string;
   while (i < mutated_objects_length) {
     target_object_id = (result.effects?.mutated &&
@@ -115,7 +107,7 @@ export async function Join(ft1?: string, ft2?: string) {
       },
     });
     let current_type = target_object.data?.type as string;
-    if (current_type == target_type) {
+    if (current_type == tokenizedAssetType) {
       console.log("Remaining Asset: ", target_object_id);
       return target_object_id;
     }

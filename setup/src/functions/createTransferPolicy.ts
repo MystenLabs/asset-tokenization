@@ -1,4 +1,3 @@
-import { config } from "dotenv";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
@@ -8,8 +7,7 @@ import {
   TransferPolicyTransaction,
   percentageToBasisPoints,
 } from "@mysten/kiosk";
-
-config({});
+import { adminPhrase, registry, publisher, assetTokenizationPackageId, tokenizedAssetType, otw } from "../config";
 
 const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
@@ -19,18 +17,16 @@ const kioskClient = new KioskClient({
 });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
-  process.env.OWNER_MNEMONIC_PHRASE as string
+  adminPhrase
 );
 const address = owner_keypair.toSuiAddress().toString();
 
 export async function CreateTransferPolicy() {
   const tx = new TransactionBlock();
-  const registry = process.env.REGISTRY as string;
-  const publisher = process.env.ASSET_PUBLISHER as string;
 
   const [policy, cap] = tx.moveCall({
-    target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::proxy::setup_tp`,
-    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
+    target: `${assetTokenizationPackageId}::proxy::setup_tp`,
+    typeArguments: [otw],
     arguments: [tx.object(registry), tx.object(publisher)],
   });
 
@@ -39,7 +35,7 @@ export async function CreateTransferPolicy() {
   tx.moveCall({
     target: `0x2::transfer::public_share_object`,
     typeArguments: [
-      `0x0000000000000000000000000000000000000000000000000000000000000002::transfer_policy::TransferPolicy<${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>>`,
+      `0x2::transfer_policy::TransferPolicy<${tokenizedAssetType}>`,
     ],
     arguments: [policy],
   });
@@ -57,7 +53,7 @@ export async function CreateTransferPolicy() {
 
   const created_objects_length = result.effects?.created?.length as number;
   let i = 0;
-  const target_type = `0x2::transfer_policy::TransferPolicy<${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>>`;
+  const target_type = `0x2::transfer_policy::TransferPolicy<${tokenizedAssetType}>`;
   let target_object_id: string;
   while (i < created_objects_length) {
     target_object_id = (result.effects?.created &&

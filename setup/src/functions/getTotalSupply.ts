@@ -1,8 +1,6 @@
-import { config } from "dotenv";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
-
-config({});
+import { assetCap } from "../config";
 
 const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
@@ -12,10 +10,9 @@ type TotalSupplyFields = {
 
 export async function GetTotalSupply() {
     const tx = new TransactionBlock();
-    const asset_cap_id = process.env.ASSET_CAP_ID as string;
   
     const asset_cap = await client.getObject({
-      id: asset_cap_id,
+      id: assetCap,
       options: {
         showContent:true
       }

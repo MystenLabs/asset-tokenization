@@ -1,7 +1,7 @@
 import { normalizeSuiObjectId } from "@mysten/sui.js/utils";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { fromHEX } from "@mysten/bcs";
-import { packageId, SUI_NETWORK } from "./config";
+import { assetTokenizationPackageId, SUI_NETWORK } from "./config";
 import { SuiClient } from "@mysten/sui.js/client";
 import { getSigner } from "./helpers";
 import { CompiledModule, getBytecode } from "./utils/bytecode-template";
@@ -48,7 +48,7 @@ const publishNewAsset = async (
     dependencies: [
       normalizeSuiObjectId("0x1"),
       normalizeSuiObjectId("0x2"),
-      normalizeSuiObjectId(packageId),
+      normalizeSuiObjectId(assetTokenizationPackageId),
     ],
   });
 
@@ -92,5 +92,5 @@ publishNewAsset(
   "Magical Asset",
   "A magical Asset that can be used for magical things!",
   "new-icon_url",
-  "false"
+  "true"
 );

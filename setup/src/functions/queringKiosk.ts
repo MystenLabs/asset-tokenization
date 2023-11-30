@@ -1,8 +1,7 @@
-import { config } from "dotenv";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { KioskClient, Network } from "@mysten/kiosk";
-config({});
+import { adminPhrase, buyerPhrase } from "../config";
 
 const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
@@ -12,12 +11,12 @@ const kioskClient = new KioskClient({
 });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
-  process.env.OWNER_MNEMONIC_PHRASE as string
+  adminPhrase
 );
 const owner_address = owner_keypair.toSuiAddress().toString();
 
 const buyer_keypair = Ed25519Keypair.deriveKeypair(
-  process.env.BUYER_MNEMONIC_PHRASE as string
+  buyerPhrase
 );
 
 const buyer_address = buyer_keypair.toSuiAddress().toString();

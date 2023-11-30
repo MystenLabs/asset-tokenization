@@ -1,10 +1,8 @@
-import { config } from "dotenv";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { KioskClient, Network, KioskTransaction } from "@mysten/kiosk";
-
-config({});
+import { adminPhrase, tokenizedAssetID, tokenizedAssetType, targetKioskId } from "../config";
 
 const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
@@ -14,19 +12,16 @@ const kioskClient = new KioskClient({
 });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
-  process.env.OWNER_MNEMONIC_PHRASE as string
+  adminPhrase
 );
 
 const address = owner_keypair.toSuiAddress().toString();
-const tokenized_asset = process.env.TOKENIZED_ASSET as string;
 
 export async function PlaceItemInKiosk(minted_asset?: string) {
   const tx = new TransactionBlock();
-  const item = minted_asset ?? tokenized_asset;
+  const item = minted_asset ?? tokenizedAssetID;
 
   const { kioskOwnerCaps } = await kioskClient.getOwnedKiosks({ address });
-
-  const targetKioskId = process.env.TARGET_KIOSK as string;
 
   const kioskCap = kioskOwnerCaps.find((cap) => cap.kioskId === targetKioskId);
   const kioskTx = new KioskTransaction({
@@ -35,10 +30,8 @@ export async function PlaceItemInKiosk(minted_asset?: string) {
     cap: kioskCap,
   });
 
-  const policyId = process.env.TRANSFER_POLICY as string;
-
   kioskTx.place({
-    itemType: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`,
+    itemType: tokenizedAssetType,
     item,
   });
 

@@ -1,20 +1,15 @@
-import { config } from "dotenv";
-import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
-import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { KioskClient, Network, KioskTransaction } from "@mysten/kiosk";
-config({});
+import { SuiClient } from "@mysten/sui.js/client";
+import { KioskClient } from "@mysten/kiosk";
+import { SUI_NETWORK, KIOSK_NETWORK, targetKioskId, tokenizedAssetType } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 const kioskClient = new KioskClient({
   client,
-  network: Network.TESTNET,
+  network: KIOSK_NETWORK,
 });
 
 export async function QueringKioskContent(KioskID?: string) {
-  const targetKioskId = KioskID ?? (process.env.TARGET_KIOSK as string);
-
   const res = await kioskClient.getKiosk({
     id: targetKioskId,
     options: {
@@ -28,16 +23,15 @@ export async function QueringKioskContent(KioskID?: string) {
 }
 
 export async function QueringTargetContent(KioskID?: string) {
-  const targetKioskId = KioskID ?? (process.env.TARGET_KIOSK as string);
+  const targetKiosk = KioskID ?? targetKioskId;
 
-  let result = await QueringKioskContent(targetKioskId);
+  let result = await QueringKioskContent(targetKiosk);
 
   let count = 0;
   while (count < result.items.length) {
     let itemType = result.items[count].type;
     if (
-      itemType ===
-      `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`
+      itemType === tokenizedAssetType
     ) {
       let target = result.items[count].kioskId;
       return target;

@@ -304,6 +304,39 @@ module asset_tokenization::tests {
 
     #[test]
     #[expected_failure(abort_code=tokenized_asset::EInsufficientBalance)]
+    fun test_split_fts_full_balance() {
+        let scenario= test_scenario::begin(ADMIN);
+        let test = &mut scenario;
+        let ctx = test_scenario::ctx(test);
+        let witness = TESTS {};
+
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
+            string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
+
+        let keys = vector::empty<String>();
+        let values = vector::empty<String>();
+
+        let ft = tokenized_asset::mint(&mut asset_cap, keys, values, 5, ctx);
+
+        let new_tokenized_asset = tokenized_asset::split(&mut ft, 5, ctx);
+
+        let ft_decreased_balance = tokenized_asset::value(&ft);
+        let new_tokenized_asset_balance = tokenized_asset::value(&new_tokenized_asset);
+
+        assert!(ft_decreased_balance == 0, EWrongBalanceValue);
+        assert!(new_tokenized_asset_balance == 5, EWrongBalanceValue);
+
+        transfer::public_freeze_object(asset_metadata);
+        transfer::public_transfer(asset_cap, tx_context::sender(ctx));
+        transfer::public_transfer(ft, USER);
+        transfer::public_transfer(new_tokenized_asset, USER);
+        test_scenario::end(scenario);
+    }
+
+
+
+    #[test]
+    #[expected_failure(abort_code=tokenized_asset::EInsufficientBalance)]
         fun test_split_fts_with_insufficient_balance_to_split() {
         let scenario= test_scenario::begin(ADMIN);
         let test = &mut scenario;
@@ -344,6 +377,37 @@ module asset_tokenization::tests {
         let ft = tokenized_asset::mint(&mut asset_cap, keys, values, 1, ctx);
 
         let new_tokenized_asset = tokenized_asset::split(&mut ft, 5, ctx);
+
+        transfer::public_freeze_object(asset_metadata);
+        transfer::public_transfer(asset_cap, tx_context::sender(ctx));
+        transfer::public_transfer(ft, USER);
+        transfer::public_transfer(new_tokenized_asset, USER);
+        test_scenario::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code=tokenized_asset::EZeroBalance)]
+    fun test_split_fts_zero_balance() {
+        let scenario= test_scenario::begin(ADMIN);
+        let test = &mut scenario;
+        let ctx = test_scenario::ctx(test);
+        let witness = TESTS {};
+
+        let (asset_cap, asset_metadata) = tokenized_asset::new_asset(witness, 100, ascii::string(b"CORE "), 
+            string::utf8(b"asset_name"), string::utf8(b"description"), option::some(url::new_unsafe_from_bytes(b"icon_url")), false, ctx);
+
+        let keys = vector::empty<String>();
+        let values = vector::empty<String>();
+
+        let ft = tokenized_asset::mint(&mut asset_cap, keys, values, 5, ctx);
+
+        let new_tokenized_asset = tokenized_asset::split(&mut ft, 0, ctx);
+
+        let ft_decreased_balance = tokenized_asset::value(&ft);
+        let new_tokenized_asset_balance = tokenized_asset::value(&new_tokenized_asset);
+
+        assert!(ft_decreased_balance == 5, EWrongBalanceValue);
+        assert!(new_tokenized_asset_balance == 0, EWrongBalanceValue);
 
         transfer::public_freeze_object(asset_metadata);
         transfer::public_transfer(asset_cap, tx_context::sender(ctx));

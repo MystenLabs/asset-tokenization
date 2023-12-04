@@ -1,14 +1,12 @@
-import { config } from "dotenv";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
+import { SuiClient } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { Console } from "console";
-config({});
+import { SUI_NETWORK, assetOTW, assetTokenizationPackageId, adminPhrase, assetCap } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
-  process.env.OWNER_MNEMONIC_PHRASE as string
+  adminPhrase
 );
 
 function getVecMapValues() {
@@ -30,10 +28,10 @@ export async function Mint() {
   const tx = new TransactionBlock();
 
   let tokenized_asset = tx.moveCall({
-    target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::mint`,
-    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
+    target: `${assetTokenizationPackageId}::tokenized_asset::mint`,
+    typeArguments: [assetOTW],
     arguments: [
-      tx.object(process.env.ASSET_CAP_ID as string),
+      tx.object(assetCap),
       tx.pure(keys, "vector<string>"),
       tx.pure(values, "vector<string>"),
       tx.pure(3),

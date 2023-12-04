@@ -1,9 +1,8 @@
-import { config } from "dotenv";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
-config({});
+import { SuiClient } from "@mysten/sui.js/client";
+import { SUI_NETWORK, tokenizedAssetID } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 type TokenizedAssetFields = {
   balance: number
@@ -12,7 +11,7 @@ type TokenizedAssetFields = {
 export async function GetBalance(tokenized_asset?: string) {
     const tx = new TransactionBlock();
   
-    const tokenized_asset_id = tokenized_asset ?? process.env.TOKENIZED_ASSET as string;
+    const tokenized_asset_id = tokenized_asset ?? tokenizedAssetID;
 
     const tokenized_asset_object = await client.getObject({
       id: tokenized_asset_id,

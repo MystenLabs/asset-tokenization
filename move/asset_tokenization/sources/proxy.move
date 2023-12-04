@@ -59,8 +59,18 @@ module asset_tokenization::proxy {
         ctx: &mut TxContext
     ): (TransferPolicy<TokenizedAsset<T>>, TransferPolicyCap<TokenizedAsset<T>>) {
         assert!(package::from_package<T>(publisher), ETypeNotFromPackage);
-
-        create_protected_tp<T>(registry, ctx);
+        
+        // Creates an empty TP and shares a ProtectedTP<T> object.
+        // This can be used to bypass the lock rule under specific conditions.
+        // Storing inside the cap the ProtectedTP with no way to access it
+        // as we do not want to modify this policy
+        let (transfer_policy, cap) = transfer_policy::new<TokenizedAsset<T>>(&registry.publisher, ctx);
+        let protected_tp = ProtectedTP {
+            transfer_policy,
+            policy_cap: cap,
+            id: object::new(ctx)
+        };
+        transfer::share_object(protected_tp);
 
         transfer_policy::new<TokenizedAsset<T>>(&registry.publisher, ctx)
     }
@@ -85,23 +95,6 @@ module asset_tokenization::proxy {
     /// A way for the platform to access the publisher mutably.
     public fun publisher_mut(_: &PlatformCap, registry: &mut Registry): &mut Publisher {
         &mut registry.publisher
-    }
-
-    #[lint_allow(self_transfer)]
-    /// Internal method that creates an empty TP and shares a ProtectedTP<T> object.
-    /// This can be used to bypass the lock rule under specific conditions.
-    /// Invoked inside setup_tp().
-    fun create_protected_tp<T: drop>(registry: &Registry, ctx: &mut TxContext) {
-        let (transfer_policy, cap) = transfer_policy::new<TokenizedAsset<T>>(&registry.publisher, ctx);
-        // Storing inside the cap the ProtectedTP with no way to access it
-        // as we do not want to modify this policy
-        let protected_tp = ProtectedTP {
-            transfer_policy,
-            policy_cap: cap,
-            id: object::new(ctx)
-        };
-
-        transfer::share_object(protected_tp);
     }
 
     #[test_only]

@@ -1,22 +1,18 @@
-import { config } from "dotenv";
-import {
-  TransactionBlock,
-  TransactionObjectArgument,
-} from "@mysten/sui.js/transactions";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
+import {TransactionBlock} from "@mysten/sui.js/transactions";
+import { SuiClient } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { KioskClient, KioskTransaction, Network } from "@mysten/kiosk";
-config({});
+import { KioskClient, KioskTransaction } from "@mysten/kiosk";
+import { SUI_NETWORK, KIOSK_NETWORK, assetCap, adminPhrase, tokenizedAssetType, assetOTW, assetTokenizationPackageId, protectedTP, tokenizedAssetID, targetKioskId } from "../config";
 
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+const client = new SuiClient({ url: SUI_NETWORK });
 
 const kioskClient = new KioskClient({
   client,
-  network: Network.TESTNET,
+  network: KIOSK_NETWORK,
 });
 
 const owner_keypair = Ed25519Keypair.deriveKeypair(
-  process.env.OWNER_MNEMONIC_PHRASE as string
+  adminPhrase
 );
 
 const owner_address = owner_keypair.toSuiAddress().toString();
@@ -28,8 +24,6 @@ export async function Burn(tokenized_asset?: string) {
     address: owner_address,
   });
 
-  const targetKioskId = process.env.TARGET_KIOSK as string;
-
   const kioskCap = kioskOwnerCaps.find((cap) => cap.kioskId === targetKioskId);
   const kioskTx = new KioskTransaction({
     transactionBlock: tx,
@@ -37,11 +31,8 @@ export async function Burn(tokenized_asset?: string) {
     cap: kioskCap,
   });
 
-  const asset_cap = process.env.ASSET_CAP_ID as string;
-  const protected_tp = process.env.PROTECTED_TP as string;
-
-  const itemType = `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::TokenizedAsset<${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE>`;
-  const itemId = tokenized_asset ?? (process.env.TOKENIZED_ASSET as string);
+  const itemType = tokenizedAssetType;
+  const itemId = tokenized_asset ?? tokenizedAssetID;
 
   kioskTx.list({
     itemId,
@@ -57,26 +48,26 @@ export async function Burn(tokenized_asset?: string) {
   });
 
   const burn_promise = tx.moveCall({
-    target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::unlock::asset_from_kiosk_to_burn`,
-    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
+    target: `${assetTokenizationPackageId}::unlock::asset_from_kiosk_to_burn`,
+    typeArguments: [assetOTW],
     arguments: [
       item,
-      tx.object(asset_cap),
-      tx.object(protected_tp),
+      tx.object(assetCap),
+      tx.object(protectedTP),
       transferRequest,
     ],
   });
 
   tx.moveCall({
-    target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::tokenized_asset::burn`,
-    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
-    arguments: [tx.object(asset_cap), item],
+    target: `${assetTokenizationPackageId}::tokenized_asset::burn`,
+    typeArguments: [assetOTW],
+    arguments: [tx.object(assetCap), item],
   });
 
   tx.moveCall({
-    target: `${process.env.ASSET_TOKENIZATION_PACKAGE_ID}::unlock::prove_burn`,
-    typeArguments: [`${process.env.TEMPLATE_PACKAGE_ID}::template::TEMPLATE`],
-    arguments: [tx.object(asset_cap), burn_promise],
+    target: `${assetTokenizationPackageId}::unlock::prove_burn`,
+    typeArguments: [assetOTW],
+    arguments: [tx.object(assetCap), burn_promise],
   });
 
   kioskTx.finalize();

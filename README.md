@@ -15,7 +15,6 @@ https://docs.sui.io/guides/developer/advanced/asset-tokenization
 - **Asset Burning**: Asset creators can specify if fractions are burnable, allowing removal from circulation.
 - **Impact of Burning**: Decreases circulating supply but maintains the total supply, enabling minting of burned fractions to retain the predetermined total supply.
 ## Deployment
-:zap: If you have already installed the cli and have an address created, you can skip to Publishing.
 ### Publishing
 #### Publishing the asset_tokenization Package
 **Manually**

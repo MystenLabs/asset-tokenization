@@ -17,7 +17,7 @@ https://docs.sui.io/guides/developer/advanced/asset-tokenization
 ## Deployment
 ### Publishing
 #### Publishing the asset_tokenization Package
-**Manually**
+##### Manually
 In a terminal or console at the move/asset_tokenization directory of the project, run:
 `sui client publish --gas-budget <GAS-BUDGET>`
 Replace <GAS-BUDGET> with an appropriate value (e.g., 20000000 MIST) for the gas budget.
@@ -31,16 +31,16 @@ The package should successfully build & deploy, and you should see:
 ```
 Choose and store the `package ID` and the `registry ID` from the created objects in the respective fields within your .env file.
 Modify the Move.toml file under the [package] section by adding published-at = <package ID>. Also, under the [addresses] section, replace 0x0 with the same `package ID`.
-**Automatically**
+##### Automatically
 The fields that are automatically filled are: `SUI_NETWORK`, `ASSET_TOKENIZATION_PACKAGE_ID` and `REGISTRY`.
 To publish with the bash script run:
 `npm run publish-asset-tokenization`
 After publishing, you can now edit the `Move.toml` file like described in the Manual flow.
 #### Publishing template Package
-**Manually**
+##### Manually
 To publish the template package move to the template folder and execute the same command as in the previous section.
 You should choose and store the `package ID`, asset `metadata ID`, `asset cap ID` and the `Publisher ID` from the created objects in the respective fields within your **.env** file.
-**Automatically**
+##### Automatically
 The process of automatic deployment for the template package refers to publishing a new asset via the WASM library. Quick start steps:
 - Make sure that the `asset_tokenization/Move.toml` file has its published-at field uncommented and populated with the latest deployment of the package.
 - Ensure that the `asset_tokenization` package address is the same as the original deployment (if upgraded otherwise same as published-at).
